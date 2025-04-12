@@ -3,7 +3,17 @@
 // gain XP, level up, and trade items.
 
 const fs = require('fs');
+const http = require('http');
 const { Client, Intents, MessageEmbed, MessageActionRow, MessageButton } = require('discord.js');
+
+// Create a simple HTTP server for UptimeRobot pings
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Discord RPG Bot is online!');
+});
+server.listen(3000, () => {
+  console.log('Web server running on port 3000');
+});
 
 // Initialize the Discord client with necessary intents
 const client = new Client({
