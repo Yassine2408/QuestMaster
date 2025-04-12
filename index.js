@@ -1810,6 +1810,21 @@ client.on('messageCreate', async message => {
 
       case 'adventure':
         await adventure(message, args);
+        // Level up pet if player has one
+        const adventurePlayer = getPlayerData(message.author.id);
+        if (adventurePlayer.pet && adventurePlayer.petStats) {
+          const petXpGained = getRandomInt(5, 15);
+          adventurePlayer.petStats.xp += petXpGained;
+          
+          // Level up pet if enough XP (100 XP per level)
+          if (adventurePlayer.petStats.xp >= 100 * adventurePlayer.petStats.level) {
+            adventurePlayer.petStats.xp = 0;
+            adventurePlayer.petStats.level += 1;
+            await message.channel.send(`🐾 Your pet gained ${petXpGained} XP and leveled up to level ${adventurePlayer.petStats.level}!`);
+          } else {
+            await message.channel.send(`🐾 Your pet gained ${petXpGained} XP!`);
+          }
+        }
         break;
 
       case 'shop':
