@@ -1872,19 +1872,21 @@ client.on('messageCreate', async message => {
         break;
 
       case 'pet':
-        const playerData = getPlayerData(message.author.id);
-        if (!playerData.pet) {
-          return message.reply('You don\'t have a pet yet! Use !tame to get one.');
+        {
+          const playerPetData = getPlayerData(message.author.id);
+          if (!playerPetData.pet) {
+            return message.reply('You don\'t have a pet yet! Use !tame to get one.');
+          }
+          
+          const petEmbed = new MessageEmbed()
+            .setTitle('Your Pet')
+            .setColor(0x00AE86)
+            .addField('Type', playerPetData.petStats.type.charAt(0).toUpperCase() + playerPetData.petStats.type.slice(1))
+            .addField('Level', playerPetData.petStats.level.toString())
+            .addField('XP', playerPetData.petStats.xp.toString());
+          
+          return message.reply({ embeds: [petEmbed] });
         }
-        
-        const petEmbed = new MessageEmbed()
-          .setTitle('Your Pet')
-          .setColor(0x00AE86)
-          .addField('Type', playerData.petStats.type.charAt(0).toUpperCase() + playerData.petStats.type.slice(1))
-          .addField('Level', playerData.petStats.level.toString())
-          .addField('XP', playerData.petStats.xp.toString());
-        
-        return message.reply({ embeds: [petEmbed] });
         break;
 
       default:
