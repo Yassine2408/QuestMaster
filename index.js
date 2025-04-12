@@ -1705,14 +1705,16 @@ function help(message) {
       '`!heal` - Heal your character (costs gold)\n' +
       '`!leaderboard` - View the player leaderboard'
     )
-  .addField('👥 Party System',
+    .addField('👥 Party System',
       '`!party` or `!party status` - View your party status\n' +
-      '`!party invite @player` - Invite a player to your party\n' +
+      '`!party invite @player` - Invite a player to your party (must be within 3 levels)\n' +
       '`!party accept @player` - Accept a party invitation\n' +
       '`!party leave` - Leave your current party\n' +
-      '`!party adventure [location]` - Go on an adventure with your party\n' +
-      '`!daily` - Claim your daily reward\n' +
-      '`!achievements` - View your achievements'
+      '`!party adventure [location]` - Go on an adventure with your party'
+    )
+    .addField('🎁 Rewards & Achievements',
+      '`!daily` - Claim daily reward (50-150 gold, resets every 24h)\n' +
+      '`!achievements` - View your earned achievements and how to unlock more'
     );
 
   return message.reply({ embeds: [embed] });
