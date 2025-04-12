@@ -1129,6 +1129,7 @@ async function partyInvite(message, args) {
   
   // Add the invite
   gameData.partyInvites[targetId].push(inviterId);
+  saveData(); // Save data after adding invite
   
   return message.reply(`You have invited ${target.username} to your party! They can accept with \`${CONFIG.prefix}party accept @${message.author.username}\``);
 }
@@ -1203,6 +1204,7 @@ async function partyAccept(message, args) {
   
   // Remove the invitation
   gameData.partyInvites[accepterId] = gameData.partyInvites[accepterId].filter(id => id !== inviterId);
+  saveData(); // Save data after creating party
   
   return message.reply(`You have joined ${inviter.username}'s party! You can now adventure together using \`${CONFIG.prefix}party adventure [location]\`.`);
 }
@@ -1242,10 +1244,12 @@ async function partyLeave(message) {
     
     // Delete the party
     delete gameData.parties[partyId];
+    saveData(); // Save data after disbanding party
     return message.reply('You left the party. The party has been disbanded.');
   } else {
     // Otherwise just remove the member
     party.members = party.members.filter(id => id !== leaverId);
+    saveData(); // Save data after leaving party
     return message.reply('You have left the party.');
   }
 }

@@ -69,9 +69,16 @@ When creating the invite link for your bot, make sure to grant the following per
 - `!use <item>` - Use a consumable item
 
 ### Adventure
-- `!adventure [location]` - Go on an adventure
+- `!adventure [location]` - Go on a solo adventure
 - `!heal` - Heal your character (costs gold)
 - `!leaderboard` - View the player leaderboard
+
+### Party System
+- `!party` or `!party status` - View your party status
+- `!party invite @player` - Invite a player to your party (must be within 3 levels)
+- `!party accept @player` - Accept a party invitation
+- `!party leave` - Leave your current party
+- `!party adventure [location]` - Go on an adventure with your party
 
 ## Data Persistence
 
@@ -84,3 +91,20 @@ The bot automatically saves player data to a file named `rpg_data.json` every 5 
 - Items can be crafted using gathered resources
 - Players can equip weapons and armor to improve their combat abilities
 - Adventures have level requirements and feature combat against enemies
+- Party system allows 2 players to team up and adventure together
+- Party members share rewards and have improved chances of loot
+- Party members must be within 3 levels of each other
+- The bot automatically backs up player data to protect against data loss
+
+## Keeping the Bot Online 24/7
+
+This bot includes a simple web server that can be pinged by UptimeRobot to keep it running continuously, even on a free Replit account:
+
+1. Sign up for a free account at [UptimeRobot](https://uptimerobot.com/)
+2. Create a new monitor with these settings:
+   - Monitor Type: HTTP(s)
+   - Friendly Name: QuestForge Discord Bot (or your preferred name)
+   - URL: Your Replit URL (e.g., https://your-bot-name.your-username.repl.co)
+   - Monitoring Interval: 5 minutes
+
+This will keep your bot online by pinging it every 5 minutes, preventing it from going to sleep.
