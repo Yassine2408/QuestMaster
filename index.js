@@ -1722,6 +1722,10 @@ function help(message) {
     .addField('🎁 Rewards & Achievements',
       '`!daily` - Claim daily reward (50-150 gold, resets every 24h)\n' +
       '`!achievements` - View your earned achievements and how to unlock more'
+    )
+    .addField('🐾 Pet System',
+      '`!tame <creature>` - Try to tame a creature (Wolf, Bear, Eagle)\n' +
+      '`!pet` - View your pet\'s status'
     );
 
   return message.reply({ embeds: [embed] });
@@ -1838,6 +1842,49 @@ client.on('messageCreate', async message => {
 
       case 'party':
         await party(message, args);
+        break;
+
+      case 'tame':
+        if (!args.length) {
+          return message.reply('Please specify what creature you want to tame! Available creatures: Wolf, Bear, Eagle');
+        }
+        const creatureName = args[0].toLowerCase();
+        const validCreatures = ['wolf', 'bear', 'eagle'];
+        
+        if (!validCreatures.includes(creatureName)) {
+          return message.reply('That creature cannot be tamed! Available creatures: Wolf, Bear, Eagle');
+        }
+        
+        const player = getPlayerData(message.author.id);
+        if (player.pet) {
+          return message.reply('You already have a pet! You can only have one pet at a time.');
+        }
+        
+        const tameChance = Math.random();
+        if (tameChance > 0.6) {
+          player.pet = creatureName;
+          player.petStats.name = creatureName;
+          player.petStats.type = creatureName;
+          return message.reply(`Success! You tamed a ${creatureName.charAt(0).toUpperCase() + creatureName.slice(1)}!`);
+        } else {
+          return message.reply('The creature ran away! Try taming another one.');
+        }
+        break;
+
+      case 'pet':
+        const playerData = getPlayerData(message.author.id);
+        if (!playerData.pet) {
+          return message.reply('You don\'t have a pet yet! Use !tame to get one.');
+        }
+        
+        const petEmbed = new MessageEmbed()
+          .setTitle('Your Pet')
+          .setColor(0x00AE86)
+          .addField('Type', playerData.petStats.type.charAt(0).toUpperCase() + playerData.petStats.type.slice(1))
+          .addField('Level', playerData.petStats.level.toString())
+          .addField('XP', playerData.petStats.xp.toString());
+        
+        return message.reply({ embeds: [petEmbed] });
         break;
 
       default:
