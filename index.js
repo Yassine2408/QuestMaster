@@ -41,7 +41,9 @@ const CONFIG = {
 
 // In-memory database
 let gameData = {
-  players: {}
+  players: {},
+  partyInvites: {}, // Store party invites
+  parties: {} // Store active parties
 };
 
 // Game items
