@@ -1084,129 +1084,163 @@ function areLevelsCompatible(player1Level, player2Level) {
 
 // Create or send a party invite
 async function partyInvite(message, args) {
-  const inviterId = message.author.id;
-  const inviterData = getPlayerData(inviterId);
-  
-  // Check if user is already in a party
-  for (const partyId in gameData.parties) {
-    if (gameData.parties[partyId].members.includes(inviterId)) {
-      return message.reply('You are already in a party! Leave your current party before inviting others.');
+  try {
+    const inviterId = message.author.id;
+    const inviterData = getPlayerData(inviterId);
+    
+    // Check if user is already in a party
+    for (const partyId in gameData.parties) {
+      if (gameData.parties[partyId] && gameData.parties[partyId].members.includes(inviterId)) {
+        return message.reply('You are already in a party! Leave your current party before inviting others.');
+      }
     }
+    
+    // Check for mentions directly from the message
+    if (!message.mentions || !message.mentions.users || message.mentions.users.size === 0) {
+      return message.reply('You need to mention a player to invite them to your party! For example: `!party invite @username`');
+    }
+    
+    // Get the mentioned user
+    const target = message.mentions.users.first();
+    if (!target || !target.id) {
+      return message.reply('Could not find the user you mentioned. Make sure you\'re mentioning a valid user.');
+    }
+    
+    if (target.id === inviterId) {
+      return message.reply('You cannot invite yourself to a party!');
+    }
+    
+    const targetId = target.id;
+    
+    // Initialize player data for target if they don't have any
+    const targetData = getPlayerData(targetId);
+    
+    // Check if levels are compatible
+    if (!areLevelsCompatible(inviterData.level, targetData.level)) {
+      return message.reply(`You cannot invite this player because your levels are too far apart. You are level ${inviterData.level} and they are level ${targetData.level}.`);
+    }
+    
+    // Initialize party invites if not already done
+    if (!gameData.partyInvites) {
+      gameData.partyInvites = {};
+    }
+    
+    // Store the party invite
+    if (!gameData.partyInvites[targetId]) {
+      gameData.partyInvites[targetId] = [];
+    }
+    
+    // Check if invite already exists
+    if (gameData.partyInvites[targetId].includes(inviterId)) {
+      return message.reply(`You have already sent a party invite to ${target.username}.`);
+    }
+    
+    // Add the invite
+    gameData.partyInvites[targetId].push(inviterId);
+    saveData(); // Save data after adding invite
+    
+    return message.reply(`You have invited ${target.username} to your party! They can accept with \`${CONFIG.prefix}party accept @${message.author.username}\``);
+  } catch (error) {
+    console.error("Error in party invite:", error);
+    return message.reply("An error occurred while sending the party invite. Please try again.");
   }
-  
-  // Check if user mentioned someone to invite
-  if (!message.mentions.users.size) {
-    return message.reply('You need to mention a player to invite them to your party! For example: `!party invite @username`');
-  }
-  
-  // Get the mentioned user
-  const target = message.mentions.users.first();
-  if (!target) {
-    return message.reply('You need to mention a valid user to invite them to your party.');
-  }
-  
-  if (target.id === inviterId) {
-    return message.reply('You cannot invite yourself to a party!');
-  }
-  
-  const targetId = target.id;
-  const targetData = getPlayerData(targetId);
-  
-  // Check if levels are compatible
-  if (!areLevelsCompatible(inviterData.level, targetData.level)) {
-    return message.reply(`You cannot invite this player because your levels are too far apart. You are level ${inviterData.level} and they are level ${targetData.level}.`);
-  }
-  
-  // Store the party invite
-  if (!gameData.partyInvites[targetId]) {
-    gameData.partyInvites[targetId] = [];
-  }
-  
-  // Check if invite already exists
-  if (gameData.partyInvites[targetId].includes(inviterId)) {
-    return message.reply(`You have already sent a party invite to ${target.username}.`);
-  }
-  
-  // Add the invite
-  gameData.partyInvites[targetId].push(inviterId);
-  saveData(); // Save data after adding invite
-  
-  return message.reply(`You have invited ${target.username} to your party! They can accept with \`${CONFIG.prefix}party accept @${message.author.username}\``);
 }
 
 // Accept a party invite
 async function partyAccept(message, args) {
-  const accepterId = message.author.id;
-  const accepterData = getPlayerData(accepterId);
-  
-  // Check if the user has any invites
-  if (!gameData.partyInvites[accepterId] || gameData.partyInvites[accepterId].length === 0) {
-    return message.reply('You don\'t have any party invites to accept!');
-  }
-  
-  // Check if user mentioned someone to accept
-  if (!message.mentions.users.size) {
-    // List all invites if no specific one was mentioned
-    const invitersList = [];
-    for (const inviterId of gameData.partyInvites[accepterId]) {
-      try {
-        const user = await client.users.fetch(inviterId);
-        invitersList.push(user.username);
-      } catch (error) {
-        console.error(`Could not fetch user ${inviterId}:`, error);
+  try {
+    const accepterId = message.author.id;
+    const accepterData = getPlayerData(accepterId);
+    
+    // Initialize party invites if not already done
+    if (!gameData.partyInvites) {
+      gameData.partyInvites = {};
+    }
+    
+    // Check if the user has any invites
+    if (!gameData.partyInvites[accepterId] || gameData.partyInvites[accepterId].length === 0) {
+      return message.reply('You don\'t have any party invites to accept!');
+    }
+    
+    // Check for mentions directly from the message
+    if (!message.mentions || !message.mentions.users || message.mentions.users.size === 0) {
+      // List all invites if no specific one was mentioned
+      const invitersList = [];
+      for (const inviterId of gameData.partyInvites[accepterId]) {
+        try {
+          const user = await client.users.fetch(inviterId);
+          invitersList.push(user.username);
+        } catch (error) {
+          console.error(`Could not fetch user ${inviterId}:`, error);
+        }
+      }
+      
+      if (invitersList.length === 0) {
+        return message.reply('You have pending invites but could not fetch the usernames. Please try again.');
+      }
+      
+      return message.reply(`You have party invites from: ${invitersList.join(', ')}. Use \`${CONFIG.prefix}party accept @username\` to accept a specific invite.`);
+    }
+    
+    // Get the mentioned user (inviter)
+    const inviter = message.mentions.users.first();
+    if (!inviter || !inviter.id) {
+      return message.reply('Could not find the user you mentioned. Make sure you\'re mentioning a valid user.');
+    }
+    
+    const inviterId = inviter.id;
+    
+    // Check if the invitation exists
+    if (!gameData.partyInvites[accepterId].includes(inviterId)) {
+      return message.reply(`You don't have a party invite from ${inviter.username}.`);
+    }
+    
+    const inviterData = getPlayerData(inviterId);
+    
+    // Check if levels are still compatible
+    if (!areLevelsCompatible(accepterData.level, inviterData.level)) {
+      // Remove the invite
+      gameData.partyInvites[accepterId] = gameData.partyInvites[accepterId].filter(id => id !== inviterId);
+      saveData();
+      return message.reply(`Cannot join party with ${inviter.username} because your levels are too far apart.`);
+    }
+    
+    // Initialize parties if not already done
+    if (!gameData.parties) {
+      gameData.parties = {};
+    }
+    
+    // Check if either player is already in a party
+    for (const partyId in gameData.parties) {
+      if (!gameData.parties[partyId]) continue;
+      const party = gameData.parties[partyId];
+      if (!party.members) continue;
+      
+      if (party.members.includes(accepterId)) {
+        return message.reply('You are already in a party! Leave your current party before accepting invites.');
+      }
+      if (party.members.includes(inviterId)) {
+        return message.reply(`${inviter.username} is already in a party and can't invite you right now.`);
       }
     }
     
-    if (invitersList.length === 0) {
-      return message.reply('You have pending invites but could not fetch the usernames. Please try again.');
-    }
+    // Create a new party
+    const partyId = `${inviterId}_${Date.now()}`;
+    gameData.parties[partyId] = {
+      leader: inviterId,
+      members: [inviterId, accepterId],
+      createdAt: Date.now()
+    };
     
-    return message.reply(`You have party invites from: ${invitersList.join(', ')}. Use \`${CONFIG.prefix}party accept @username\` to accept a specific invite.`);
-  }
-  
-  // Get the mentioned user (inviter)
-  const inviter = message.mentions.users.first();
-  
-  const inviterId = inviter.id;
-  
-  // Check if the invitation exists
-  if (!gameData.partyInvites[accepterId].includes(inviterId)) {
-    return message.reply(`You don't have a party invite from ${inviter.username}.`);
-  }
-  
-  const inviterData = getPlayerData(inviterId);
-  
-  // Check if levels are still compatible
-  if (!areLevelsCompatible(accepterData.level, inviterData.level)) {
-    // Remove the invite
+    // Remove the invitation
     gameData.partyInvites[accepterId] = gameData.partyInvites[accepterId].filter(id => id !== inviterId);
-    return message.reply(`Cannot join party with ${inviter.username} because your levels are too far apart.`);
+    saveData(); // Save data after creating party
+    
+    return message.reply(`You have joined ${inviter.username}'s party! You can now adventure together using \`${CONFIG.prefix}party adventure [location]\`.`);
+  } catch (error) {
+    console.error("Error in party accept:", error);
+    return message.reply("An error occurred while accepting the party invite. Please try again.");
   }
-  
-  // Check if either player is already in a party
-  for (const partyId in gameData.parties) {
-    const party = gameData.parties[partyId];
-    if (party.members.includes(accepterId)) {
-      return message.reply('You are already in a party! Leave your current party before accepting invites.');
-    }
-    if (party.members.includes(inviterId)) {
-      return message.reply(`${inviter.username} is already in a party and can't invite you right now.`);
-    }
-  }
-  
-  // Create a new party
-  const partyId = `${inviterId}_${Date.now()}`;
-  gameData.parties[partyId] = {
-    leader: inviterId,
-    members: [inviterId, accepterId],
-    createdAt: Date.now()
-  };
-  
-  // Remove the invitation
-  gameData.partyInvites[accepterId] = gameData.partyInvites[accepterId].filter(id => id !== inviterId);
-  saveData(); // Save data after creating party
-  
-  return message.reply(`You have joined ${inviter.username}'s party! You can now adventure together using \`${CONFIG.prefix}party adventure [location]\`.`);
 }
 
 // Leave a party
