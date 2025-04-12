@@ -1864,8 +1864,12 @@ client.on('messageCreate', async message => {
         const tameChance = Math.random();
         if (tameChance > 0.6) {
           tamePlayerData.pet = creatureName;
-          tamePlayerData.petStats.name = creatureName;
-          tamePlayerData.petStats.type = creatureName;
+          tamePlayerData.petStats = {
+            name: creatureName,
+            type: creatureName,
+            level: 1,
+            xp: 0
+          };
           return message.reply(`Success! You tamed a ${creatureName.charAt(0).toUpperCase() + creatureName.slice(1)}!`);
         } else {
           return message.reply('The creature ran away! Try taming another one.');
