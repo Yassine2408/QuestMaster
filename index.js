@@ -261,7 +261,14 @@ function getPlayerData(userId) {
         daily: 0
       },
       achievements: [],
-      totalCrafted: 0
+      totalCrafted: 0,
+      pet: null,
+      petStats: {
+        name: null,
+        type: null,
+        level: 1,
+        xp: 0
+      },
     };
   }
   return gameData.players[userId];
@@ -1625,8 +1632,8 @@ async function partyAdventure(message, args) {
       const goldLost = Math.floor(memberData.gold * 0.07);
       memberData.gold = Math.max(0, memberData.gold - goldLost);
 
-      // Reset health to 30% (better than solo adventures)
-      memberdata.stats.currentHealth = Math.floor(memberData.stats.maxHealth * 0.3);
+      // Reset health to30% (better than solo adventures)
+      memberData.stats.currentHealth = Math.floor(memberData.stats.maxHealth * 0.3);
 
       try {
         const member = await client.users.fetch(memberId);
@@ -2189,7 +2196,14 @@ function getPlayerData(userId) {
         daily: 0
       },
       achievements: [],
-      totalCrafted: 0
+      totalCrafted: 0,
+      pet: null,
+      petStats: {
+        name: null,
+        type: null,
+        level: 1,
+        xp: 0
+      },
     };
   }
   return gameData.players[userId];
