@@ -12,23 +12,10 @@ function updateActivity() {
   lastActive = Date.now();
 }
 
-// Create a more robust HTTP server with ping mechanism
+// Create a simple HTTP server for UptimeRobot pings
 const server = http.createServer((req, res) => {
-  if (req.url === '/ping') {
-    res.writeHead(200, { 
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Connection': 'keep-alive'
-    });
-    res.end(JSON.stringify({
-      status: 'online',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime()
-    }));
-  } else {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Bot is running');
-  }
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('OK');
 });
 
 const port = process.env.PORT || 3000;
