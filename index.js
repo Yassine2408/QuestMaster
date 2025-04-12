@@ -22,13 +22,11 @@ const server = http.createServer((req, res) => {
     timestamp: new Date().toISOString()
   };
   
-  if (req.url === '/status') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(status));
-  } else {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Discord RPG Bot is online!');
-  }
+  res.writeHead(200, { 
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*'
+  });
+  res.end(JSON.stringify(status));
 });
 
 server.listen(3000, '0.0.0.0', () => {
