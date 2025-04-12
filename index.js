@@ -1855,16 +1855,17 @@ client.on('messageCreate', async message => {
           return message.reply('That creature cannot be tamed! Available creatures: Wolf, Bear, Eagle');
         }
         
-        const player = getPlayerData(message.author.id);
-        if (player.pet) {
+        // Get player data for taming
+        const tamePlayerData = getPlayerData(message.author.id);
+        if (tamePlayerData.pet) {
           return message.reply('You already have a pet! You can only have one pet at a time.');
         }
         
         const tameChance = Math.random();
         if (tameChance > 0.6) {
-          player.pet = creatureName;
-          player.petStats.name = creatureName;
-          player.petStats.type = creatureName;
+          tamePlayerData.pet = creatureName;
+          tamePlayerData.petStats.name = creatureName;
+          tamePlayerData.petStats.type = creatureName;
           return message.reply(`Success! You tamed a ${creatureName.charAt(0).toUpperCase() + creatureName.slice(1)}!`);
         } else {
           return message.reply('The creature ran away! Try taming another one.');
