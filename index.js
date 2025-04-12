@@ -195,11 +195,21 @@ function loadData() {
   }
 }
 
+// Import backup functionality
+const { createBackup } = require('./backup');
+
 // Save data to file
 function saveData() {
   try {
     fs.writeFileSync(CONFIG.dataFile, JSON.stringify(gameData), 'utf8');
     console.log('Data saved successfully!');
+    
+    // Create a backup every 5 saves (adjust as needed)
+    saveData.counter = (saveData.counter || 0) + 1;
+    if (saveData.counter >= 5) {
+      createBackup();
+      saveData.counter = 0;
+    }
   } catch (error) {
     console.error('Error saving data:', error);
   }
