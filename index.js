@@ -6,11 +6,31 @@ const fs = require('fs');
 const http = require('http');
 const { Client, Intents, MessageEmbed, MessageActionRow, MessageButton } = require('discord.js');
 
-// Create a simple HTTP server for UptimeRobot pings
+// Track when the bot was last active
+let lastActive = Date.now();
+function updateActivity() {
+  lastActive = Date.now();
+}
+
+// Create a robust HTTP server for UptimeRobot pings
 const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Discord RPG Bot is online!');
+  const uptime = Math.floor((Date.now() - lastActive) / 1000);
+  const status = {
+    status: 'online',
+    message: 'Discord RPG Bot is online!',
+    uptime: `Bot was active ${uptime} seconds ago`,
+    timestamp: new Date().toISOString()
+  };
+  
+  if (req.url === '/status') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(status));
+  } else {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Discord RPG Bot is online!');
+  }
 });
+
 server.listen(3000, () => {
   console.log('Web server running on port 3000');
 });
@@ -1684,6 +1704,8 @@ function help(message) {
 
 // Handle commands
 client.on('messageCreate', async message => {
+  // Update activity timestamp whenever bot receives a message
+  updateActivity();
   // Ignore bot messages and messages without prefix
   if (message.author.bot || !message.content.startsWith(CONFIG.prefix)) return;
   
@@ -1787,6 +1809,9 @@ client.on('messageCreate', async message => {
 client.once('ready', () => {
   console.log(`Bot is online as ${client.user.tag}!`);
   
+  // Mark bot as active
+  updateActivity();
+  
   // Load data from file
   loadData();
   
@@ -1794,6 +1819,11 @@ client.once('ready', () => {
   setInterval(() => {
     saveData();
   }, CONFIG.saveInterval);
+  
+  // Update activity timestamp regularly (every 5 minutes)
+  setInterval(() => {
+    updateActivity();
+  }, 5 * 60 * 1000);
 });
 
 // Login to Discord
