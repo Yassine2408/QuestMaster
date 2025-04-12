@@ -14,23 +14,8 @@ function updateActivity() {
 
 // Create a robust HTTP server for UptimeRobot pings
 const server = http.createServer((req, res) => {
-  const uptime = Math.floor((Date.now() - lastActive) / 1000);
-  const status = {
-    status: 'ok',
-    alive: true,
-    message: 'Discord RPG Bot is online!',
-    uptime: `Bot was active ${uptime} seconds ago`,
-    timestamp: new Date().toISOString()
-  };
-  
-  // Send immediate response for monitoring
-  res.writeHead(200, { 
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive'
-  });
-  res.end(JSON.stringify(status));
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('OK');
 });
 
 server.listen(3000, '0.0.0.0', () => {
