@@ -1875,16 +1875,22 @@ client.on('messageCreate', async message => {
       case 'pet':
         {
           const playerPetData = getPlayerData(message.author.id);
-          if (!playerPetData.pet) {
+          if (!playerPetData.pet || !playerPetData.petStats) {
             return message.reply('You don\'t have a pet yet! Use !tame to get one.');
           }
+          
+          const petType = playerPetData.petStats.type || 'Unknown';
+          const petLevel = playerPetData.petStats.level || 1;
+          const petXP = playerPetData.petStats.xp || 0;
           
           const petEmbed = new MessageEmbed()
             .setTitle('Your Pet')
             .setColor(0x00AE86)
-            .addField('Type', playerPetData.petStats.type.charAt(0).toUpperCase() + playerPetData.petStats.type.slice(1))
-            .addField('Level', playerPetData.petStats.level.toString())
-            .addField('XP', playerPetData.petStats.xp.toString());
+            .addFields([
+              { name: 'Type', value: petType.charAt(0).toUpperCase() + petType.slice(1) },
+              { name: 'Level', value: petLevel.toString() },
+              { name: 'XP', value: petXP.toString() }
+            ]);
           
           return message.reply({ embeds: [petEmbed] });
         }
