@@ -31,8 +31,8 @@ const server = http.createServer((req, res) => {
   }
 });
 
-server.listen(3000, () => {
-  console.log('Web server running on port 3000');
+server.listen(3000, '0.0.0.0', () => {
+  console.log('Web server running at http://0.0.0.0:3000');
 });
 
 // Initialize the Discord client with necessary intents
