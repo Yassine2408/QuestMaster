@@ -52,6 +52,7 @@ const CONFIG = {
   saveInterval: 5 * 60 * 1000, // Save data every 5 minutes
   dataFile: 'rpg_data.json', // File to store persistent data
   currency: '🪙', // Currency symbol
+  botName: 'QuestMaster', // Bot name
   farmCooldown: 60 * 1000, // Farming cooldown in milliseconds (1 minute)
   adventureCooldown: 5 * 60 * 1000, // Adventure cooldown (5 minutes)
   huntCooldown: 3 * 60 * 1000, // Hunting cooldown (3 minutes)
