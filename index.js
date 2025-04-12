@@ -12,19 +12,36 @@ function updateActivity() {
   lastActive = Date.now();
 }
 
-// Create a robust HTTP server for UptimeRobot pings
+// Create a more robust HTTP server with ping mechanism
 const server = http.createServer((req, res) => {
-  res.writeHead(200, { 
-    'Content-Type': 'text/plain',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive'
-  });
-  res.end('OK');
+  if (req.url === '/ping') {
+    res.writeHead(200, { 
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Connection': 'keep-alive'
+    });
+    res.end(JSON.stringify({
+      status: 'online',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    }));
+  } else {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Bot is running');
+  }
 });
 
 const port = process.env.PORT || 3000;
 server.listen(port, '0.0.0.0', () => {
   console.log(`Web server running at http://0.0.0.0:${port}`);
+  // Self-ping to keep alive
+  setInterval(() => {
+    http.get(`http://0.0.0.0:${port}/ping`, (res) => {
+      console.log('Keep-alive ping sent');
+    }).on('error', (err) => {
+      console.error('Keep-alive ping failed:', err.message);
+    });
+  }, 4 * 60 * 1000); // Ping every 4 minutes
 });
 
 // Initialize the Discord client with necessary intents
