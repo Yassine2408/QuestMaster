@@ -1,4 +1,4 @@
-# Discord RPG Bot
+# QuestForge Discord RPG Bot
 
 A Discord RPG game bot where users can farm resources, gain XP, level up, and trade items using Discord commands.
 
@@ -11,7 +11,9 @@ A Discord RPG game bot where users can farm resources, gain XP, level up, and tr
 - Crafting system
 - Equipment system
 - Adventure mode with combat
+- Party system for cooperative adventures
 - Leaderboard system
+- Automatic data backup system
 
 ## Setup Instructions
 

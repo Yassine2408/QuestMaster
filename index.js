@@ -1087,15 +1087,16 @@ async function partyInvite(message, args) {
   const inviterId = message.author.id;
   const inviterData = getPlayerData(inviterId);
   
-  if (!args.length) {
-    return message.reply('You need to mention a player to invite them to your party!');
-  }
-  
   // Check if user is already in a party
   for (const partyId in gameData.parties) {
     if (gameData.parties[partyId].members.includes(inviterId)) {
       return message.reply('You are already in a party! Leave your current party before inviting others.');
     }
+  }
+  
+  // Check if user mentioned someone to invite
+  if (!message.mentions.users.size) {
+    return message.reply('You need to mention a player to invite them to your party! For example: `!party invite @username`');
   }
   
   // Get the mentioned user
@@ -1142,9 +1143,8 @@ async function partyAccept(message, args) {
     return message.reply('You don\'t have any party invites to accept!');
   }
   
-  // Get the mentioned user (inviter)
-  const inviter = message.mentions.users.first();
-  if (!inviter) {
+  // Check if user mentioned someone to accept
+  if (!message.mentions.users.size) {
     // List all invites if no specific one was mentioned
     const invitersList = [];
     for (const inviterId of gameData.partyInvites[accepterId]) {
@@ -1156,8 +1156,15 @@ async function partyAccept(message, args) {
       }
     }
     
+    if (invitersList.length === 0) {
+      return message.reply('You have pending invites but could not fetch the usernames. Please try again.');
+    }
+    
     return message.reply(`You have party invites from: ${invitersList.join(', ')}. Use \`${CONFIG.prefix}party accept @username\` to accept a specific invite.`);
   }
+  
+  // Get the mentioned user (inviter)
+  const inviter = message.mentions.users.first();
   
   const inviterId = inviter.id;
   
