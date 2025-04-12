@@ -4,7 +4,7 @@ modules = ["nodejs-20"]
 channel = "stable-24_05"
 
 [workflows]
-runButton = "Project"
+runButton = "Run Discord Bot"
 
 [[workflows.workflow]]
 name = "Project"
@@ -24,6 +24,15 @@ agentRequireRestartOnSave = false
 
 [[workflows.workflow.tasks]]
 task = "packager.installForAll"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node index.js"
+
+[[workflows.workflow]]
+name = "Run Discord Bot"
+author = 27884635
+mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
