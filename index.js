@@ -1077,6 +1077,518 @@ async function leaderboard(message) {
   return message.reply({ embeds: [embed] });
 }
 
+// Check if players are within an acceptable level range (within 3 levels of each other)
+function areLevelsCompatible(player1Level, player2Level) {
+  return Math.abs(player1Level - player2Level) <= 3;
+}
+
+// Create or send a party invite
+async function partyInvite(message, args) {
+  const inviterId = message.author.id;
+  const inviterData = getPlayerData(inviterId);
+  
+  if (!args.length) {
+    return message.reply('You need to mention a player to invite them to your party!');
+  }
+  
+  // Check if user is already in a party
+  for (const partyId in gameData.parties) {
+    if (gameData.parties[partyId].members.includes(inviterId)) {
+      return message.reply('You are already in a party! Leave your current party before inviting others.');
+    }
+  }
+  
+  // Get the mentioned user
+  const target = message.mentions.users.first();
+  if (!target) {
+    return message.reply('You need to mention a valid user to invite them to your party.');
+  }
+  
+  if (target.id === inviterId) {
+    return message.reply('You cannot invite yourself to a party!');
+  }
+  
+  const targetId = target.id;
+  const targetData = getPlayerData(targetId);
+  
+  // Check if levels are compatible
+  if (!areLevelsCompatible(inviterData.level, targetData.level)) {
+    return message.reply(`You cannot invite this player because your levels are too far apart. You are level ${inviterData.level} and they are level ${targetData.level}.`);
+  }
+  
+  // Store the party invite
+  if (!gameData.partyInvites[targetId]) {
+    gameData.partyInvites[targetId] = [];
+  }
+  
+  // Check if invite already exists
+  if (gameData.partyInvites[targetId].includes(inviterId)) {
+    return message.reply(`You have already sent a party invite to ${target.username}.`);
+  }
+  
+  // Add the invite
+  gameData.partyInvites[targetId].push(inviterId);
+  
+  return message.reply(`You have invited ${target.username} to your party! They can accept with \`${CONFIG.prefix}party accept @${message.author.username}\``);
+}
+
+// Accept a party invite
+async function partyAccept(message, args) {
+  const accepterId = message.author.id;
+  const accepterData = getPlayerData(accepterId);
+  
+  // Check if the user has any invites
+  if (!gameData.partyInvites[accepterId] || gameData.partyInvites[accepterId].length === 0) {
+    return message.reply('You don\'t have any party invites to accept!');
+  }
+  
+  // Get the mentioned user (inviter)
+  const inviter = message.mentions.users.first();
+  if (!inviter) {
+    // List all invites if no specific one was mentioned
+    const invitersList = [];
+    for (const inviterId of gameData.partyInvites[accepterId]) {
+      try {
+        const user = await client.users.fetch(inviterId);
+        invitersList.push(user.username);
+      } catch (error) {
+        console.error(`Could not fetch user ${inviterId}:`, error);
+      }
+    }
+    
+    return message.reply(`You have party invites from: ${invitersList.join(', ')}. Use \`${CONFIG.prefix}party accept @username\` to accept a specific invite.`);
+  }
+  
+  const inviterId = inviter.id;
+  
+  // Check if the invitation exists
+  if (!gameData.partyInvites[accepterId].includes(inviterId)) {
+    return message.reply(`You don't have a party invite from ${inviter.username}.`);
+  }
+  
+  const inviterData = getPlayerData(inviterId);
+  
+  // Check if levels are still compatible
+  if (!areLevelsCompatible(accepterData.level, inviterData.level)) {
+    // Remove the invite
+    gameData.partyInvites[accepterId] = gameData.partyInvites[accepterId].filter(id => id !== inviterId);
+    return message.reply(`Cannot join party with ${inviter.username} because your levels are too far apart.`);
+  }
+  
+  // Check if either player is already in a party
+  for (const partyId in gameData.parties) {
+    const party = gameData.parties[partyId];
+    if (party.members.includes(accepterId)) {
+      return message.reply('You are already in a party! Leave your current party before accepting invites.');
+    }
+    if (party.members.includes(inviterId)) {
+      return message.reply(`${inviter.username} is already in a party and can't invite you right now.`);
+    }
+  }
+  
+  // Create a new party
+  const partyId = `${inviterId}_${Date.now()}`;
+  gameData.parties[partyId] = {
+    leader: inviterId,
+    members: [inviterId, accepterId],
+    createdAt: Date.now()
+  };
+  
+  // Remove the invitation
+  gameData.partyInvites[accepterId] = gameData.partyInvites[accepterId].filter(id => id !== inviterId);
+  
+  return message.reply(`You have joined ${inviter.username}'s party! You can now adventure together using \`${CONFIG.prefix}party adventure [location]\`.`);
+}
+
+// Leave a party
+async function partyLeave(message) {
+  const leaverId = message.author.id;
+  let partyId = null;
+  
+  // Find the party the user is in
+  for (const id in gameData.parties) {
+    if (gameData.parties[id].members.includes(leaverId)) {
+      partyId = id;
+      break;
+    }
+  }
+  
+  if (!partyId) {
+    return message.reply('You are not in a party!');
+  }
+  
+  const party = gameData.parties[partyId];
+  
+  // If party leader leaves or it's a 2-person party, disband the party
+  if (party.leader === leaverId || party.members.length <= 2) {
+    // Notify all members about party disbanding
+    for (const memberId of party.members) {
+      if (memberId !== leaverId) {
+        try {
+          const member = await client.users.fetch(memberId);
+          member.send(`Your party has been disbanded because ${message.author.username} left.`);
+        } catch (error) {
+          console.error(`Could not notify user ${memberId}:`, error);
+        }
+      }
+    }
+    
+    // Delete the party
+    delete gameData.parties[partyId];
+    return message.reply('You left the party. The party has been disbanded.');
+  } else {
+    // Otherwise just remove the member
+    party.members = party.members.filter(id => id !== leaverId);
+    return message.reply('You have left the party.');
+  }
+}
+
+// View party status
+async function partyStatus(message) {
+  const userId = message.author.id;
+  let partyId = null;
+  
+  // Find the party the user is in
+  for (const id in gameData.parties) {
+    if (gameData.parties[id].members.includes(userId)) {
+      partyId = id;
+      break;
+    }
+  }
+  
+  if (!partyId) {
+    return message.reply('You are not in a party!');
+  }
+  
+  const party = gameData.parties[partyId];
+  
+  // Create an embed for the party status
+  const embed = new MessageEmbed()
+    .setTitle('Party Status')
+    .setColor(0x00AAFF);
+  
+  // Add party members
+  let membersText = '';
+  for (const memberId of party.members) {
+    try {
+      const user = await client.users.fetch(memberId);
+      const playerData = getPlayerData(memberId);
+      
+      const isLeader = memberId === party.leader ? '👑 ' : '';
+      membersText += `${isLeader}**${user.username}** - Level ${playerData.level} - HP: ${playerData.stats.currentHealth}/${playerData.stats.maxHealth}\n`;
+    } catch (error) {
+      console.error(`Could not fetch user ${memberId}:`, error);
+    }
+  }
+  
+  embed.setDescription(membersText);
+  return message.channel.send({ embeds: [embed] });
+}
+
+// Go on an adventure as a party
+async function partyAdventure(message, args) {
+  const userId = message.author.id;
+  const playerData = getPlayerData(userId);
+  let partyId = null;
+  
+  // Find the party the user is in
+  for (const id in gameData.parties) {
+    if (gameData.parties[id].members.includes(userId)) {
+      partyId = id;
+      break;
+    }
+  }
+  
+  if (!partyId) {
+    return message.reply('You are not in a party! Use the regular adventure command or join a party first.');
+  }
+  
+  const party = gameData.parties[partyId];
+  
+  // Only party leader can initiate adventures
+  if (party.leader !== userId) {
+    return message.reply('Only the party leader can initiate a party adventure!');
+  }
+  
+  // Check cooldowns for all party members
+  const now = Date.now();
+  for (const memberId of party.members) {
+    const memberData = getPlayerData(memberId);
+    if (memberData.cooldowns.adventure > now) {
+      const timeLeft = Math.ceil((memberData.cooldowns.adventure - now) / 1000);
+      try {
+        const member = await client.users.fetch(memberId);
+        return message.reply(`Can't start the adventure because ${member.username} needs to wait ${timeLeft} seconds before going on another adventure.`);
+      } catch (error) {
+        return message.reply(`Can't start the adventure because one of your party members is on cooldown (${timeLeft} seconds).`);
+      }
+    }
+  }
+  
+  // Select location
+  let location;
+  if (args.length > 0) {
+    const locationName = args.join(' ').toLowerCase();
+    location = ADVENTURE_LOCATIONS.find(loc => loc.name.toLowerCase() === locationName);
+    
+    if (!location) {
+      // Find the lowest level member to determine available locations
+      let lowestLevel = 999;
+      for (const memberId of party.members) {
+        const memberData = getPlayerData(memberId);
+        if (memberData.level < lowestLevel) {
+          lowestLevel = memberData.level;
+        }
+      }
+      
+      const availableLocations = ADVENTURE_LOCATIONS
+        .filter(loc => loc.minLevel <= lowestLevel)
+        .map(loc => loc.name)
+        .join(', ');
+      
+      return message.reply(`Location not found! Available locations for your party: ${availableLocations}`);
+    }
+  } else {
+    // Find the lowest level member to determine default location
+    let lowestLevel = 999;
+    for (const memberId of party.members) {
+      const memberData = getPlayerData(memberId);
+      if (memberData.level < lowestLevel) {
+        lowestLevel = memberData.level;
+      }
+    }
+    
+    // Default to the first location the lowest-level player can access
+    location = ADVENTURE_LOCATIONS.find(loc => loc.minLevel <= lowestLevel);
+    
+    if (!location) {
+      return message.reply("Your party's lowest level member isn't high enough level for any adventures yet. Try farming to level up first!");
+    }
+  }
+  
+  // Check level requirement for all party members
+  for (const memberId of party.members) {
+    const memberData = getPlayerData(memberId);
+    if (memberData.level < location.minLevel) {
+      try {
+        const member = await client.users.fetch(memberId);
+        return message.reply(`${member.username} needs to be at least level ${location.minLevel} to adventure in ${location.name}!`);
+      } catch (error) {
+        return message.reply(`One of your party members needs to be at least level ${location.minLevel} to adventure in ${location.name}!`);
+      }
+    }
+  }
+  
+  // Set cooldown for all party members
+  for (const memberId of party.members) {
+    const memberData = getPlayerData(memberId);
+    memberData.cooldowns.adventure = now + CONFIG.adventureCooldown;
+  }
+  
+  // Combine party stats
+  let totalAttackPower = 0;
+  let totalDefense = 0;
+  let memberHealths = {};
+  
+  for (const memberId of party.members) {
+    const memberData = getPlayerData(memberId);
+    let attackPower = memberData.stats.strength;
+    let defense = memberData.stats.defense;
+    
+    if (memberData.equipped.weapon) {
+      attackPower += ITEMS[memberData.equipped.weapon].power;
+    }
+    
+    if (memberData.equipped.armor) {
+      defense += ITEMS[memberData.equipped.armor].defense;
+    }
+    
+    totalAttackPower += attackPower;
+    totalDefense += Math.floor(defense * 0.7); // Scale defense a bit for balance
+    memberHealths[memberId] = memberData.stats.currentHealth;
+  }
+  
+  // Select 2 random enemies from the location (party faces more enemies)
+  let enemies = [];
+  for (let i = 0; i < 2; i++) {
+    enemies.push(location.enemies[Math.floor(Math.random() * location.enemies.length)]);
+  }
+  
+  // Calculate total enemy stats
+  let totalEnemyHp = enemies.reduce((sum, enemy) => sum + enemy.hp, 0);
+  let totalEnemyAttack = enemies.reduce((sum, enemy) => sum + enemy.attack, 0);
+  
+  // Simulate combat
+  let combatLog = [];
+  combatLog.push(`Your party (${party.members.length} members) ventures into ${location.name} and encounters ${enemies.map(e => e.name).join(' and ')}!`);
+  
+  while (Object.values(memberHealths).some(health => health > 0) && totalEnemyHp > 0) {
+    // Party attacks
+    const partyDamage = Math.max(1, getRandomInt(totalAttackPower - 5, totalAttackPower + 5));
+    totalEnemyHp -= partyDamage;
+    combatLog.push(`Your party hits the enemies for ${partyDamage} combined damage.`);
+    
+    if (totalEnemyHp <= 0) break;
+    
+    // Enemies attack a random party member
+    const targetMemberId = party.members[Math.floor(Math.random() * party.members.length)];
+    const enemyDamage = Math.max(1, getRandomInt(totalEnemyAttack - 3, totalEnemyAttack + 3) - Math.floor(totalDefense / 3));
+    memberHealths[targetMemberId] -= enemyDamage;
+    
+    try {
+      const member = await client.users.fetch(targetMemberId);
+      combatLog.push(`The enemies hit ${member.username} for ${enemyDamage} damage.`);
+    } catch (error) {
+      combatLog.push(`The enemies hit a party member for ${enemyDamage} damage.`);
+    }
+  }
+  
+  // Update all party members' health
+  for (const memberId of party.members) {
+    const memberData = getPlayerData(memberId);
+    memberData.stats.currentHealth = Math.max(0, memberHealths[memberId]);
+  }
+  
+  let result = `**Party Adventure in ${location.name}**\n\n`;
+  
+  // Limit combat log to avoid too long messages
+  result += combatLog.slice(-8).join('\n') + '\n\n';
+  
+  const victory = totalEnemyHp <= 0;
+  
+  if (victory) {
+    // Calculate rewards (slightly boosted for party play)
+    const baseXpReward = enemies.reduce((sum, enemy) => sum + enemy.xp, 0) * 1.2;
+    const baseGoldReward = enemies.reduce((sum, enemy) => sum + enemy.gold, 0) * 1.2;
+    const bonusXp = getRandomInt(location.rewards.xp.min, location.rewards.xp.max);
+    const bonusGold = getRandomInt(location.rewards.gold.min, location.rewards.gold.max);
+    
+    const totalXpReward = Math.floor(baseXpReward + bonusXp);
+    const totalGoldReward = Math.floor(baseGoldReward + bonusGold);
+    
+    // Split rewards among party members
+    const xpPerMember = Math.floor(totalXpReward / party.members.length);
+    const goldPerMember = Math.floor(totalGoldReward / party.members.length);
+    
+    result += `**Victory!** Your party defeated the enemies!\n\n`;
+    result += `**Rewards per member:**\n`;
+    result += `- ${xpPerMember} XP\n`;
+    result += `- ${goldPerMember} ${CONFIG.currency}\n`;
+    
+    // Determine item drops
+    let allItemsGained = [];
+    
+    for (const itemReward of location.rewards.items) {
+      // Increased chance for party play
+      const adjustedChance = Math.min(0.95, itemReward.chance * 1.3);
+      if (Math.random() <= adjustedChance) {
+        const quantity = getRandomInt(itemReward.min, itemReward.max);
+        allItemsGained.push({ id: itemReward.id, quantity });
+      }
+    }
+    
+    // Award rewards to all members
+    let levelUps = [];
+    for (const memberId of party.members) {
+      const memberData = getPlayerData(memberId);
+      
+      // Award XP and gold
+      memberData.gold += goldPerMember;
+      const levelsGained = awardXP(memberData, xpPerMember);
+      
+      if (levelsGained > 0) {
+        try {
+          const member = await client.users.fetch(memberId);
+          levelUps.push(`${member.username} leveled up to level ${memberData.level}!`);
+        } catch (error) {
+          levelUps.push(`A party member leveled up to level ${memberData.level}!`);
+        }
+      }
+      
+      // Award items (randomly split between members)
+      for (const item of allItemsGained) {
+        if (Math.random() < 1 / party.members.length) { // Chance to get item scales with party size
+          addItemToInventory(memberData, item.id, item.quantity);
+        }
+      }
+    }
+    
+    if (allItemsGained.length > 0) {
+      result += `- Items found: ${allItemsGained.map(item => `${item.quantity} ${ITEMS[item.id].name}`).join(', ')}\n`;
+      result += `(Items are randomly distributed among party members)\n`;
+    }
+    
+    if (levelUps.length > 0) {
+      result += `\n🎉 **Level ups:**\n${levelUps.join('\n')}`;
+    }
+    
+    // Show remaining health
+    result += `\n\n**Party Health:**\n`;
+    for (const memberId of party.members) {
+      try {
+        const member = await client.users.fetch(memberId);
+        const memberData = getPlayerData(memberId);
+        result += `${member.username}: ${memberData.stats.currentHealth}/${memberData.stats.maxHealth} HP\n`;
+      } catch (error) {
+        console.error(`Could not fetch user ${memberId}:`, error);
+      }
+    }
+    
+  } else {
+    // Party was defeated
+    result += `**Defeat!** Your party was overwhelmed by the enemies...\n\n`;
+    
+    // Each member loses some gold on defeat
+    for (const memberId of party.members) {
+      const memberData = getPlayerData(memberId);
+      
+      // Lose 7% of gold (less than solo adventures)
+      const goldLost = Math.floor(memberData.gold * 0.07);
+      memberData.gold = Math.max(0, memberData.gold - goldLost);
+      
+      // Reset health to 30% (better than solo adventures)
+      memberData.stats.currentHealth = Math.floor(memberData.stats.maxHealth * 0.3);
+      
+      try {
+        const member = await client.users.fetch(memberId);
+        result += `${member.username} lost ${goldLost} ${CONFIG.currency} and now has ${memberData.stats.currentHealth}/${memberData.stats.maxHealth} HP.\n`;
+      } catch (error) {
+        result += `A party member lost ${goldLost} ${CONFIG.currency}.\n`;
+      }
+    }
+    
+    result += `\nYour party barely escaped with their lives. Consider healing before your next adventure.`;
+  }
+  
+  return message.reply(result);
+}
+
+// Handle party commands
+async function party(message, args) {
+  if (!args.length) {
+    return partyStatus(message);
+  }
+  
+  const subCommand = args[0].toLowerCase();
+  const subCommandArgs = args.slice(1);
+  
+  switch (subCommand) {
+    case 'invite':
+      return partyInvite(message, subCommandArgs);
+    case 'accept':
+      return partyAccept(message, subCommandArgs);
+    case 'leave':
+      return partyLeave(message);
+    case 'status':
+      return partyStatus(message);
+    case 'adventure':
+    case 'adv':
+      return partyAdventure(message, subCommandArgs);
+    default:
+      return message.reply(`Unknown party command. Available commands: invite, accept, leave, status, adventure.`);
+  }
+}
+
 // Print help message
 function help(message) {
   const embed = new MessageEmbed()
@@ -1113,6 +1625,13 @@ function help(message) {
       '`!adventure [location]` - Go on an adventure\n' +
       '`!heal` - Heal your character (costs gold)\n' +
       '`!leaderboard` - View the player leaderboard'
+    )
+  .addField('👥 Party System',
+      '`!party` or `!party status` - View your party status\n' +
+      '`!party invite @player` - Invite a player to your party\n' +
+      '`!party accept @player` - Accept a party invitation\n' +
+      '`!party leave` - Leave your current party\n' +
+      '`!party adventure [location]` - Go on an adventure with your party'
     );
   
   return message.reply({ embeds: [embed] });
@@ -1203,6 +1722,10 @@ client.on('messageCreate', async message => {
       
       case 'leaderboard':
         await leaderboard(message);
+        break;
+        
+      case 'party':
+        await party(message, args);
         break;
       
       default:
