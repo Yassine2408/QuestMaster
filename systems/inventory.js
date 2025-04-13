@@ -110,7 +110,7 @@ async function handleShopCommand(message, playerData, args) {
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
                     .setCustomId('shop_armor')
-                    .setLabel('🛡️ Armor') 
+                    .setLabel('🛡️ Armor')
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
                     .setCustomId('shop_consumables')
@@ -141,7 +141,7 @@ async function handleShopCommand(message, playerData, args) {
             if (!item.value) continue; // Skip items that can't be bought
 
             let itemText = `**${item.name}** - ${item.description}\nPrice: ${item.value} ${CONFIG.currency}\n`;
-            
+
             if (item.requirements) {
                 itemText += `Level Required: ${item.requirements.level}\n`;
             }
@@ -170,7 +170,7 @@ async function handleShopCommand(message, playerData, args) {
             }
         }
 
-        const msg = await message.channel.send({ 
+        const msg = await message.channel.send({
             embeds: [shopEmbed],
             components: [row]
         });
@@ -186,7 +186,7 @@ async function handleShopCommand(message, playerData, args) {
             }
 
             const category = i.customId.split('_')[1];
-            
+
             // Filter items by category
             const categoryItems = Object.entries(ITEMS).filter(([id, item]) => {
                 if (category === 'weapons') return item.type === 'weapon';
@@ -227,12 +227,10 @@ async function handleShopCommand(message, playerData, args) {
                 .setColor(CONFIG.embedColor)
                 .setDescription(`Your gold: ${playerData.gold} ${CONFIG.currency}\nClick an item to purchase it.`);
 
-            await i.update({ 
+            await i.update({
                 embeds: [categoryEmbed],
                 components: itemRows
             });
-        });
-            time: 60000 // 1 minute timeout
         });
 
         collector.on('collect', async i => {
