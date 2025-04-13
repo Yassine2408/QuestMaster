@@ -2,8 +2,23 @@
 const { EmbedBuilder } = require('discord.js');
 const helpers = require('./helpers');
 
-// Get bot config
-const CONFIG = require('../index').CONFIG;
+// Define CONFIG directly to avoid circular dependency
+const CONFIG = {
+  prefix: '!', // Command prefix
+  saveInterval: 5 * 60 * 1000, // Save data every 5 minutes
+  dataFile: 'rpg_data.json', // File to store persistent data
+  currency: '🪙', // Currency symbol
+  botName: 'QuestForge', // Bot name
+  embedColor: '#7289DA', // Default embed color
+  farmCooldown: 60 * 1000, // Farming cooldown in milliseconds (1 minute)
+  adventureCooldown: 5 * 60 * 1000, // Adventure cooldown (5 minutes)
+  huntCooldown: 3 * 60 * 1000, // Hunting cooldown (3 minutes)
+  mineCooldown: 2 * 60 * 1000, // Mining cooldown (2 minutes)
+  fishCooldown: 2 * 60 * 1000, // Fishing cooldown (2 minutes)
+  dailyCooldown: 24 * 60 * 60 * 1000, // Daily reward cooldown (24 hours)
+  questCompletionExp: 100, // Base XP for completing a quest
+  maxPetLevel: 30, // Maximum level for pets
+};
 
 // Create a profile embed for a player
 function createProfileEmbed(user, playerData) {
@@ -271,7 +286,20 @@ function createLeaderboardEmbed(players, category, title) {
 // Create shop embed
 function createShopEmbed(playerGold) {
     const ITEMS = require('../data/items');
-    const SHOP_ITEMS = require('../index').SHOP_ITEMS;
+    // Define SHOP_ITEMS directly to avoid circular dependency
+    const SHOP_ITEMS = [
+      'wooden_sword',
+      'stone_sword',
+      'iron_sword',
+      'steel_sword',
+      'leather_armor',
+      'iron_armor',
+      'health_potion',
+      'strength_potion',
+      'pet_food',
+      'pet_toy',
+      'pet_treat'
+    ];
     
     const embed = new EmbedBuilder()
         .setTitle('🛒 Item Shop')
