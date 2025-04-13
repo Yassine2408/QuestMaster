@@ -105,166 +105,70 @@ async function handleShopCommand(message, playerData, args) {
         const shopEmbed = new EmbedBuilder()
             .setTitle('🛒 Item Shop')
             .setColor(CONFIG.embedColor)
-            .setDescription(`Your gold: ${playerData.gold} ${CONFIG.currency}\n\nClick on items to view details and purchase!`);
+            .setDescription(`Welcome to the shop! You have ${playerData.gold} ${CONFIG.currency}\n\nClick the buttons below to purchase items:`);
 
-        // Group items by category
-        const categories = {
-            'Weapons': [],
-            'Armor': [],
-            'Consumables': [],
-            'Pet Items': []
-        };
+        // Create buttons for each category
+        const weaponRow = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('shop_weapons')
+                    .setLabel('⚔️ Weapons')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('shop_armor')
+                    .setLabel('🛡️ Armor')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('shop_potions')
+                    .setLabel('🧪 Potions')
+                    .setStyle(ButtonStyle.Primary)
+            );
 
-        // Sort items into categories
-        Object.entries(ITEMS).forEach(([itemId, item]) => {
-            if (!item.value) return; // Skip items that can't be bought
+        const msg = await message.channel.send({
+            embeds: [shopEmbed],
+            components: [weaponRow]
+        });
 
-            let category;
-            if (item.type === 'weapon') category = 'Weapons';
-            else if (item.type === 'armor') category = 'Armor';
-            else if (item.type === 'consumable') category = 'Consumables';
-            else if (item.type === 'pet') category = 'Pet Items';
-            else return;
+        // Create collector for button interactions
+        const collector = msg.createMessageComponentCollector({
+            time: 60000 // 1 minute timeout
+        });
 
-            categories[category].push({
-                id: itemId,
-                ...item
+        collector.on('collect', async i => {
+            if (i.user.id !== message.author.id) {
+                return i.reply({ content: 'Only the command user can use these buttons!', ephemeral: true });
+            }
+
+            const category = i.customId.split('_')[1];
+            const categoryEmbed = createCategoryEmbed(category, playerData.gold);
+            await i.update({ embeds: [categoryEmbed] });
+        });
+
+        return;
+    }
+
+    function createCategoryEmbed(category, gold) {
+        const embed = new EmbedBuilder()
+            .setTitle(`🛒 ${category.charAt(0).toUpperCase() + category.slice(1)}`)
+            .setColor(CONFIG.embedColor)
+            .setDescription(`Your gold: ${gold} ${CONFIG.currency}`);
+
+        const items = Object.values(ITEMS).filter(item => {
+            if (category === 'weapons') return item.type === 'weapon';
+            if (category === 'armor') return item.type === 'armor';
+            if (category === 'potions') return item.type === 'consumable';
+            return false;
+        });
+
+        items.forEach(item => {
+            embed.addFields({
+                name: item.name,
+                value: `Price: ${item.value} ${CONFIG.currency}\n${item.description}`,
+                inline: true
             });
         });
 
-        const rows = [];
-
-        // Create select menus for each category
-        Object.entries(categories).forEach(([category, items]) => {
-            if (items.length > 0) {
-                const selectMenu = new StringSelectMenuBuilder()
-                    .setCustomId(`shop_${category.toLowerCase()}`)
-                    .setPlaceholder(`Browse ${category}`)
-                    .addOptions(
-                        items.map(item => ({
-                            label: item.name,
-                            description: `${item.value} ${CONFIG.currency}${item.requirements ? ` - Requires Level ${item.requirements.level}` : ''}`,
-                            value: item.id
-                        }))
-                    );
-
-                rows.push(new ActionRowBuilder().addComponents(selectMenu));
-            }
-        });
-
-        // Add a close button
-        const closeButton = new ButtonBuilder()
-            .setCustomId('shop_close')
-            .setLabel('Close Shop')
-            .setStyle(ButtonStyle.Danger);
-
-        rows.push(new ActionRowBuilder().addComponents(closeButton));
-
-        const shopMessage = await message.channel.send({
-            embeds: [shopEmbed],
-            components: rows
-        });
-
-        // Create collector for interactions
-        const collector = shopMessage.createMessageComponentCollector({
-            time: 300000 // 5 minutes
-        });
-
-        collector.on('collect', async (interaction) => {
-            if (!interaction.isStringSelectMenu() && !interaction.isButton()) return;
-
-            // Handle close button
-            if (interaction.customId === 'shop_close') {
-                collector.stop();
-                await shopMessage.delete().catch(console.error);
-                return;
-            }
-
-            // Handle category selection
-            if (interaction.isStringSelectMenu()) {
-                const selectedItemId = interaction.values[0];
-                const item = ITEMS[selectedItemId];
-
-                if (!item) return;
-
-                // Check if player can afford the item
-                if (playerData.gold < item.value) {
-                    await interaction.reply({ 
-                        content: `You don't have enough gold! You need ${item.value} ${CONFIG.currency}.`,
-                        ephemeral: true 
-                    });
-                    return;
-                }
-
-                // Check level requirement
-                if (item.requirements && playerData.level < item.requirements.level) {
-                    await interaction.reply({ 
-                        content: `You need to be level ${item.requirements.level} to buy this item!`,
-                        ephemeral: true 
-                    });
-                    return;
-                }
-
-                // Create confirmation buttons
-                const confirmRow = new ActionRowBuilder()
-                    .addComponents(
-                        new ButtonBuilder()
-                            .setCustomId(`confirm_buy_${selectedItemId}`)
-                            .setLabel('Confirm Purchase')
-                            .setStyle(ButtonStyle.Success),
-                        new ButtonBuilder()
-                            .setCustomId('cancel_buy')
-                            .setLabel('Cancel')
-                            .setStyle(ButtonStyle.Secondary)
-                    );
-
-                // Show confirmation message
-                const confirmMsg = await interaction.reply({
-                    content: `Are you sure you want to buy ${item.name} for ${item.value} ${CONFIG.currency}?`,
-                    components: [confirmRow],
-                    ephemeral: true
-                });
-
-                // Create collector for confirmation
-                const confirmCollector = confirmMsg.createMessageComponentCollector({
-                    filter: i => i.user.id === interaction.user.id,
-                    time: 30000,
-                    max: 1
-                });
-
-                confirmCollector.on('collect', async (confirmInteraction) => {
-                    if (confirmInteraction.customId === `confirm_buy_${selectedItemId}`) {
-                        // Process purchase
-                        playerData.gold -= item.value;
-                        require('../index').addItemToInventory(playerData, selectedItemId);
-                        saveData();
-
-                        await confirmInteraction.update({
-                            content: `Successfully purchased ${item.name} for ${item.value} ${CONFIG.currency}!`,
-                            components: []
-                        });
-
-                        // Update shop embed with new gold amount
-                        shopEmbed.setDescription(`Your gold: ${playerData.gold} ${CONFIG.currency}\n\nClick on items to view details and purchase!`);
-                        await shopMessage.edit({ embeds: [shopEmbed] });
-                    } else {
-                        await confirmInteraction.update({
-                            content: 'Purchase cancelled.',
-                            components: []
-                        });
-                    }
-                });
-            }
-        });
-
-        collector.on('end', async () => {
-            if (!shopMessage.deleted) {
-                await shopMessage.edit({ 
-                    content: 'Shop closed.',
-                    components: [] 
-                });
-            }
-        });
+        return embed;
     }
 }
 
@@ -292,10 +196,10 @@ async function handleCraftCommand(message, playerData, args) {
             for (const [materialId, quantity] of Object.entries(recipe.materials)) {
                 recipeDesc += `- ${ITEMS[materialId].name}: ${quantity}\n`;
             }
-            recipesEmbed.addFields({ 
-                name: resultItem.name, 
+            recipesEmbed.addFields({
+                name: resultItem.name,
                 value: recipeDesc,
-                inline: true 
+                inline: true
             });
 
             // Add craft button
@@ -320,7 +224,7 @@ async function handleCraftCommand(message, playerData, args) {
         }
 
         // Send embed with buttons
-        await message.channel.send({ 
+        await message.channel.send({
             embeds: [recipesEmbed],
             components: buttonRows
         });
