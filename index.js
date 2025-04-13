@@ -959,9 +959,51 @@ async function handleShopCommand(message, playerData, args) {
     const shopEmbed = new EmbedBuilder()
       .setTitle('🛒 Item Shop')
       .setColor(CONFIG.embedColor)
-      .setDescription(`Welcome to the shop! You have ${playerData.gold} ${CONFIG.currency}\n\nUse \`!shop buy <item>\` to purchase an item.\nUse \`!shop sell <item> [quantity]\` to sell items.`)
-      .addFields({ name: 'Available Items', value: formatShopItems() });
-    
+      .setDescription(`Welcome to the shop! You have ${playerData.gold} ${CONFIG.currency}\n\nUse \`!shop buy <item>\` to purchase an item.\nUse \`!shop sell <item> [quantity]\` to sell items.`);
+
+    // Group items by category
+    const categories = {
+      Weapons: [],
+      Armor: [],
+      Consumables: [],
+      Pets: []
+    };
+
+    // Sort items into categories
+    for (const itemId of SHOP_ITEMS) {
+      const item = ITEMS[itemId];
+      if (!item) continue;
+
+      let itemText = `**${item.name}** - ${item.description}\nPrice: ${item.value} ${CONFIG.currency}\n`;
+      
+      if (item.requirements) {
+        itemText += `Level Required: ${item.requirements.level}\n`;
+      }
+
+      if (item.type === 'weapon') {
+        itemText += `Attack: +${item.power}\n`;
+        categories.Weapons.push(itemText);
+      } else if (item.type === 'armor') {
+        itemText += `Defense: +${item.defense}\n`;
+        categories.Armor.push(itemText);
+      } else if (item.type === 'consumable') {
+        categories.Consumables.push(itemText);
+      } else if (item.type === 'pet') {
+        categories.Pets.push(itemText);
+      }
+    }
+
+    // Add each category as a separate field
+    for (const [category, items] of Object.entries(categories)) {
+      if (items.length > 0) {
+        shopEmbed.addFields({
+          name: `📦 ${category}`,
+          value: items.join('\n').slice(0, 1024),
+          inline: false
+        });
+      }
+    }
+
     return message.channel.send({ embeds: [shopEmbed] });
   }
 
