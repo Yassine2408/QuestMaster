@@ -12,6 +12,7 @@ const questSystem = require('./systems/quests');
 const petSystem = require('./systems/pets');
 const combatSystem = require('./systems/combat');
 const inventorySystem = require('./systems/inventory');
+const classSystem = require('./systems/classes');
 
 // Import utility modules
 const helpers = require('./utils/helpers');
@@ -207,7 +208,9 @@ function getPlayerData(userId, username = "Unknown") {
       level: 1,
       xp: 0,
       gold: 100,
+      class: null,
       inventory: {},
+      abilities: {},
       equipped: {
         weapon: null,
         armor: null
@@ -576,6 +579,10 @@ client.on('messageCreate', async (message) => {
       case 'achievements':
       case 'achieve':
         await handleAchievementsCommand(message, playerData);
+        break;
+        
+      case 'class':
+        await classSystem.handleClassCommand(message, playerData, args);
         break;
     }
   } catch (error) {
