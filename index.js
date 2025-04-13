@@ -4,7 +4,7 @@
 
 const fs = require('fs');
 const http = require('http');
-const { Client, EmbedBuilder, ActionRowBuilder, ButtonBuilder, StringSelectMenuBuilder } = require('discord.js');
+const { Client, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = require('discord.js');
 
 // Import system modules
 const dailySystem = require('./systems/daily');
@@ -1510,16 +1510,16 @@ async function handleHealCommand(message, playerData) {
   }
   
   // Interactive healing confirmation
-  const confirmRow = new MessageActionRow()
+  const confirmRow = new ActionRowBuilder()
     .addComponents(
-      new MessageButton()
+      new ButtonBuilder()
         .setCustomId('confirm_heal')
         .setLabel('Heal')
-        .setStyle('SUCCESS'),
-      new MessageButton()
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
         .setCustomId('cancel_heal')
         .setLabel('Cancel')
-        .setStyle('DANGER')
+        .setStyle(ButtonStyle.Danger)
     );
   
   const confirmEmbed = new EmbedBuilder()
@@ -1605,12 +1605,14 @@ async function handlePartyCommand(message, playerData, args) {
       return `${memberData.username || 'Unknown'} (Level ${memberData.level}) - HP: ${memberData.stats.currentHealth}/${memberData.stats.maxHealth}`;
     });
     
-    const partyEmbed = new MessageEmbed()
+    const partyEmbed = new EmbedBuilder()
       .setTitle('🤝 Party Status')
       .setColor(CONFIG.embedColor)
       .setDescription(`Your party has ${party.members.length} members:`)
-      .addField('Members', members.join('\n'))
-      .addField('Leader', gameData.players[party.leader]?.username || 'Unknown')
+      .addFields(
+        { name: 'Members', value: members.join('\n'), inline: false },
+        { name: 'Leader', value: gameData.players[party.leader]?.username || 'Unknown', inline: false }
+      )
       .setFooter({ text: `Party ID: ${partyId}` });
     
     return message.channel.send({ embeds: [partyEmbed] });
@@ -1811,12 +1813,12 @@ async function handleLeaderboardCommand(message, args) {
     .slice(0, 10);
   
   // Create leaderboard embed
-  const leaderboardEmbed = new MessageEmbed()
+  const leaderboardEmbed = new EmbedBuilder()
     .setTitle(title)
     .setColor(CONFIG.embedColor)
     .setDescription('Top 10 players:');
   
-  players.forEach((player, index) => {
+  const leaderboardFields = players.map((player, index) => {
     const [playerId, playerData] = player;
     let value;
     
@@ -1833,11 +1835,14 @@ async function handleLeaderboardCommand(message, args) {
         break;
     }
     
-    leaderboardEmbed.addField(
-      `#${index + 1} ${playerData.username || 'Unknown'}`,
-      value
-    );
+    return {
+      name: `#${index + 1} ${playerData.username || 'Unknown'}`,
+      value: value,
+      inline: false
+    };
   });
+  
+  leaderboardEmbed.addFields(leaderboardFields);
   
   message.channel.send({ embeds: [leaderboardEmbed] });
 }
