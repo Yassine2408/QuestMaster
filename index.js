@@ -728,14 +728,14 @@ async function handleMineCommand(message, playerData) {
   const levelUps = awardXP(playerData, xpReward);
   
   // Create a mining embed
-  const miningEmbed = new MessageEmbed()
+  const miningEmbed = new EmbedBuilder()
     .setTitle('⛏️ Mining Results')
     .setColor(CONFIG.embedColor)
     .setDescription(`You went mining and collected:\n${rewards}`)
-    .addField('Experience', `+${xpReward} XP`, true);
+    .addFields({ name: 'Experience', value: `+${xpReward} XP`, inline: true });
   
   if (levelUps > 0) {
-    miningEmbed.addField('Level Up!', `You are now level ${playerData.level}!`, true);
+    miningEmbed.addFields({ name: 'Level Up!', value: `You are now level ${playerData.level}!`, inline: true });
   }
   
   // Add cooldown information
@@ -759,7 +759,7 @@ async function handleMineCommand(message, playerData) {
       const questUpdates = updatedQuests.map(q => 
         `Quest "${q.name}": ${q.current}/${q.target} ${q.itemType} collected`
       );
-      miningEmbed.addField('Quest Progress', questUpdates.join('\n'));
+      miningEmbed.addFields({ name: 'Quest Progress', value: questUpdates.join('\n') });
     }
   }
   
