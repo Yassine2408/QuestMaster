@@ -133,7 +133,7 @@ async function handleShopCommand(message, playerData, args) {
         });
 
         const rows = [];
-        
+
         // Create select menus for each category
         Object.entries(categories).forEach(([category, items]) => {
             if (items.length > 0) {
@@ -267,8 +267,6 @@ async function handleShopCommand(message, playerData, args) {
         });
     }
 }
-}
-
 
 async function handleCraftCommand(message, playerData, args) {
     // Import recipes
