@@ -1243,7 +1243,7 @@ async function handleUnequipCommand(message, playerData, args) {
   updatePlayerStats(playerData);
   
   // Create unequip embed
-  const unequipEmbed = new MessageEmbed()
+  const unequipEmbed = new EmbedBuilder()
     .setTitle('🔄 Item Unequipped')
     .setColor(CONFIG.embedColor)
     .setDescription(`You unequipped ${item.name} and placed it in your inventory.`);
@@ -1389,11 +1389,11 @@ async function handleUseCommand(message, playerData, args) {
   removeItemFromInventory(playerData, itemId);
   
   // Create item use embed
-  const useEmbed = new MessageEmbed()
+  const useEmbed = new EmbedBuilder()
     .setTitle('🧪 Item Used')
     .setColor(CONFIG.embedColor)
     .setDescription(`You used ${item.name}!`)
-    .addField('Effect', effectDescription);
+    .addFields({ name: 'Effect', value: effectDescription });
   
   message.channel.send({ embeds: [useEmbed] });
   
@@ -1423,19 +1423,26 @@ async function handleAdventureCommand(message, playerData, args) {
   
   // If no location specified, show available locations
   if (!args.length) {
-    const locationsEmbed = new MessageEmbed()
+    const locationsEmbed = new EmbedBuilder()
       .setTitle('🗺️ Adventure Locations')
       .setColor(CONFIG.embedColor)
       .setDescription('Choose a location for your adventure:');
     
-    ADVENTURE_LOCATIONS.forEach(location => {
-      locationsEmbed.addField(
-        `${location.name} (Level ${location.minLevel}+)`,
-        `${location.description}\nPossible Rewards: ${location.rewards.items.map(item => ITEMS[item.id].name).join(', ')}`
-      );
+    const locationFields = ADVENTURE_LOCATIONS.map(location => {
+      return {
+        name: `${location.name} (Level ${location.minLevel}+)`,
+        value: `${location.description}\nPossible Rewards: ${location.rewards.items.map(item => ITEMS[item.id].name).join(', ')}`,
+        inline: false
+      };
     });
     
-    locationsEmbed.addField('Usage', 'Use `!adventure <location_name>` to embark on an adventure!');
+    locationFields.push({
+      name: 'Usage',
+      value: 'Use `!adventure <location_name>` to embark on an adventure!',
+      inline: false
+    });
+    
+    locationsEmbed.addFields(locationFields);
     return message.channel.send({ embeds: [locationsEmbed] });
   }
   
@@ -1472,7 +1479,7 @@ async function handleAdventureCommand(message, playerData, args) {
     );
     
     if (updatedQuests.length > 0) {
-      const questEmbed = new MessageEmbed()
+      const questEmbed = new EmbedBuilder()
         .setTitle('📜 Quest Progress Updated')
         .setColor(CONFIG.embedColor)
         .setDescription(updatedQuests.map(q => 
@@ -1515,7 +1522,7 @@ async function handleHealCommand(message, playerData) {
         .setStyle('DANGER')
     );
   
-  const confirmEmbed = new MessageEmbed()
+  const confirmEmbed = new EmbedBuilder()
     .setTitle('❤️ Healing')
     .setColor(CONFIG.embedColor)
     .setDescription(`Healing to full health will cost ${healCost} ${CONFIG.currency}.\nYour current health: ${playerData.stats.currentHealth}/${playerData.stats.maxHealth}\nYour gold: ${playerData.gold} ${CONFIG.currency}`)
@@ -1541,12 +1548,14 @@ async function handleHealCommand(message, playerData) {
       playerData.gold -= healCost;
       playerData.stats.currentHealth = playerData.stats.maxHealth;
       
-      const healEmbed = new MessageEmbed()
+      const healEmbed = new EmbedBuilder()
         .setTitle('❤️ Healed')
         .setColor(CONFIG.embedColor)
         .setDescription(`You have been fully healed for ${healCost} ${CONFIG.currency}!`)
-        .addField('Current Health', `${playerData.stats.currentHealth}/${playerData.stats.maxHealth}`, true)
-        .addField('Remaining Gold', `${playerData.gold} ${CONFIG.currency}`, true);
+        .addFields(
+          { name: 'Current Health', value: `${playerData.stats.currentHealth}/${playerData.stats.maxHealth}`, inline: true },
+          { name: 'Remaining Gold', value: `${playerData.gold} ${CONFIG.currency}`, inline: true }
+        );
       
       await confirmMsg.edit({ 
         embeds: [healEmbed],
