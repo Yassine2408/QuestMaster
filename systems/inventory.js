@@ -100,97 +100,131 @@ async function handleShopCommand(message, playerData, args) {
     const CONFIG = require('../index').CONFIG;
 
     if (!args.length) {
+        // Display shop items with buttons
         const shopEmbed = new EmbedBuilder()
             .setTitle('🛒 Item Shop')
             .setColor(CONFIG.embedColor)
             .setDescription(`Your gold: ${playerData.gold} ${CONFIG.currency}`);
 
+        // Group items by category with buttons
         const categories = {
-            '⚔️ Weapons': [],
-            '🛡️ Armor': [],
-            '🧪 Consumables': [],
-            '🐾 Pet Items': []
+            'Weapons': [],
+            'Armor': [],
+            'Consumables': [],
+            'Pet Items': []
         };
 
-        Object.entries(ITEMS).forEach(([id, item]) => {
-            if (!item.value) return;
+        // Create button rows for each category
+        const buttonRows = [];
+        Object.entries(ITEMS).forEach(([itemId, item]) => {
+            if (!item.value) return; // Skip items that can't be bought
 
             let category;
-            if (item.type === 'weapon') category = '⚔️ Weapons';
-            else if (item.type === 'armor') category = '🛡️ Armor';
-            else if (item.type === 'consumable') category = '🧪 Consumables';
-            else if (item.type === 'pet') category = '🐾 Pet Items';
+            if (item.type === 'weapon') category = 'Weapons';
+            else if (item.type === 'armor') category = 'Armor';
+            else if (item.type === 'consumable') category = 'Consumables';
+            else if (item.type === 'pet') category = 'Pet Items';
             else return;
 
-            let itemDesc = `**${item.name}** - ${item.value} ${CONFIG.currency}\n`;
+            let itemDesc = `${item.name} - ${item.value} ${CONFIG.currency}\n`;
             if (item.power) itemDesc += `Attack: +${item.power}\n`;
             if (item.defense) itemDesc += `Defense: +${item.defense}\n`;
             if (item.requirements) itemDesc += `Required Level: ${item.requirements.level}\n`;
-            itemDesc += `${item.description}\n`;
 
-            categories[category].push({itemDesc, id}); // Added item ID for buy functionality
+            categories[category].push({
+                desc: itemDesc,
+                id: itemId
+            });
         });
 
-        Object.entries(categories).forEach(([category, items]) => {
+        // Add each category
+        for (const [category, items] of Object.entries(categories)) {
             if (items.length > 0) {
+                shopEmbed.addFields({ 
+                    name: category, 
+                    value: items.map(i => i.desc).join('\n'),
+                    inline: false 
+                });
+
+                // Create button row for this category
                 const row = new ActionRowBuilder();
                 items.forEach(item => {
-                    const button = new ButtonBuilder()
-                        .setCustomId(`buy_${item.id}`)
-                        .setLabel(`Buy ${item.itemDesc.split('-')[0].trim()}`)
-                        .setStyle(ButtonStyle.Success);
-                    row.addComponents(button);
+                    row.addComponents(
+                        new ButtonBuilder()
+                            .setCustomId(`buy_${item.id}`)
+                            .setLabel(`Buy ${ITEMS[item.id].name}`)
+                            .setStyle(ButtonStyle.Success)
+                    );
                 });
-                shopEmbed.addFields({ name: category, value: '\u200B', inline: false }); // Placeholder value
-                shopEmbed.data.components.push(row.data)
+                buttonRows.push(row);
             }
+        }
+
+        // Send embed with buttons
+        await message.channel.send({ 
+            embeds: [shopEmbed],
+            components: buttonRows.slice(0, 5) // Discord allows max 5 button rows
         });
-
-
-        return message.channel.send({ embeds: [shopEmbed] });
     }
-
-    // Handle buy/sell commands here...
 }
 
 
 async function handleCraftCommand(message, playerData, args) {
-    const ITEMS = require('../data/items');
+    // Import recipes
     const RECIPES = require('../data/items').RECIPES;
-    const CONFIG = require('../index').CONFIG;
+    const ITEMS = require('../data/items');
 
     if (!args.length) {
-        // Show available recipes
-        const craftEmbed = new EmbedBuilder()
-            .setTitle('⚒️ Crafting')
+        // Display available recipes with buttons
+        const recipesEmbed = new EmbedBuilder()
+            .setTitle('⚒️ Crafting Recipes')
             .setColor(CONFIG.embedColor)
-            .setDescription('Click on an item to craft it!\nAvailable recipes:');
+            .setDescription('Click a button to craft an item:');
 
-        const craftButtons = [];
-        const rows = [];
-        let buttonRow = new ActionRowBuilder();
+        const buttonRows = [];
+        let currentRow = new ActionRowBuilder();
         let buttonCount = 0;
 
-        for (const [itemId, recipe] of Object.entries(RECIPES)) {
-            const item = ITEMS[itemId];
-            const button = new ButtonBuilder()
-                .setCustomId(`craft_${itemId}`)
-                .setLabel(item.name)
-                .setStyle(ButtonStyle.Primary);
-            buttonRow.addComponents(button);
+        for (const [recipeId, recipe] of Object.entries(RECIPES)) {
+            const resultItem = ITEMS[recipe.result];
+
+            // Add recipe description
+            let recipeDesc = `**${resultItem.name}**\nRequires:\n`;
+            for (const [materialId, quantity] of Object.entries(recipe.materials)) {
+                recipeDesc += `- ${ITEMS[materialId].name}: ${quantity}\n`;
+            }
+            recipesEmbed.addFields({ 
+                name: resultItem.name, 
+                value: recipeDesc,
+                inline: true 
+            });
+
+            // Add craft button
+            currentRow.addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`craft_${recipeId}`)
+                    .setLabel(`Craft ${resultItem.name}`)
+                    .setStyle(ButtonStyle.Primary)
+            );
+
             buttonCount++;
-            if (buttonCount >= 5) { // Max 5 buttons per row
-                rows.push(buttonRow);
-                buttonRow = new ActionRowBuilder();
+            if (buttonCount === 5) { // Max 5 buttons per row
+                buttonRows.push(currentRow);
+                currentRow = new ActionRowBuilder();
                 buttonCount = 0;
             }
         }
-        if (buttonCount > 0) rows.push(buttonRow);
 
+        // Add remaining buttons if any
+        if (buttonCount > 0) {
+            buttonRows.push(currentRow);
+        }
 
-        rows.forEach(row => craftEmbed.data.components.push(row.data));
-
-        await message.channel.send({ embeds: [craftEmbed] });
+        // Send embed with buttons
+        await message.channel.send({ 
+            embeds: [recipesEmbed],
+            components: buttonRows
+        });
     }
     //Handle crafting logic here.
 }
