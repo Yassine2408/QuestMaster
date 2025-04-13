@@ -101,7 +101,7 @@ async function handleInventoryCommand(message, playerData, args) {
 async function handleShopCommand(message, playerData, args) {
     if (!args.length) {
         // Create category buttons
-        const row = new ActionRowBuilder()
+        const categoryRow = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('shop_weapons')
@@ -176,9 +176,18 @@ async function handleShopCommand(message, playerData, args) {
             }
         }
 
+        // Add back to categories button
+        const backRow = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('shop_categories')
+                    .setLabel('← Back to Categories')
+                    .setStyle(ButtonStyle.Secondary)
+            );
+
         const msg = await message.channel.send({
             embeds: [shopEmbed],
-            components: [row]
+            components: [categoryRow]
         });
 
         // Create collector for button interactions
@@ -191,13 +200,22 @@ async function handleShopCommand(message, playerData, args) {
                 return i.reply({ content: 'Only the command user can use these buttons!', ephemeral: true });
             }
 
+            if (i.customId === 'shop_categories') {
+                // Reset to main shop view
+                await i.update({
+                    embeds: [shopEmbed],
+                    components: [categoryRow]
+                });
+                return;
+            }
+
             const category = i.customId.split('_')[1];
             const filteredItems = filterItemsByCategory(category, playerData);
             const categoryEmbed = createCategoryEmbed(category, playerData, filteredItems);
 
             await i.update({
                 embeds: [categoryEmbed],
-                components: createItemButtons(filteredItems)
+                components: [createItemButtons(filteredItems), backRow]
             });
         });
 
@@ -264,10 +282,10 @@ async function handleShopCommand(message, playerData, args) {
 function filterItemsByCategory(category, playerData) {
     return Object.entries(ITEMS).filter(([id, item]) => {
         if (!item.value) return false;
-        
+
         // Check class restrictions
         if (item.classRestrictions && !item.classRestrictions.includes(playerData.class)) return false;
-        
+
         // Check level requirements
         if (item.requirements && playerData.level < item.requirements.level) return false;
 
