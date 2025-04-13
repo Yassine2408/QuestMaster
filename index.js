@@ -76,6 +76,9 @@ const CONFIG = {
   maxPetLevel: 30, // Maximum level for pets
 };
 
+// Export CONFIG directly to avoid circular dependencies
+exports.CONFIG = CONFIG;
+
 // In-memory database
 let gameData = {
   players: {},
@@ -828,11 +831,11 @@ async function handleHuntCommand(message, playerData) {
   const levelUps = awardXP(playerData, xpReward);
   
   // Create a hunting embed
-  const huntingEmbed = new MessageEmbed()
+  const huntingEmbed = new EmbedBuilder()
     .setTitle('🏹 Hunting Results')
     .setColor(CONFIG.embedColor)
     .setDescription(`You went hunting and collected:\n${rewards}`)
-    .addField('Experience', `+${xpReward} XP`, true);
+    .addFields({ name: 'Experience', value: `+${xpReward} XP`, inline: true });
   
   if (levelUps > 0) {
     huntingEmbed.addField('Level Up!', `You are now level ${playerData.level}!`, true);
