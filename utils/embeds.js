@@ -151,7 +151,9 @@ function createHelpEmbed() {
               '`!inventory` or `!inv` - View your inventory\n' +
               '`!balance` or `!gold` - Check your gold balance\n' +
               '`!stats` - View detailed character stats\n' +
-              '`!achievements` - View your achievements',
+              '`!achievements` - View your achievements\n' +
+              '`!class` - View available classes\n' +
+              '`!class select <classname>` - Choose your class',
         inline: false
     });
     
@@ -228,6 +230,16 @@ function createHelpEmbed() {
         inline: false
     });
     
+    // Class system section
+    embed.addFields({
+        name: '⚜️ Class System',
+        value: '`!class` - View all available classes and their abilities\n' +
+               '`!class info <classname>` - View detailed information about a specific class\n' +
+               '`!class select <classname>` - Choose your character class\n' +
+               '`!class abilities` - View your class abilities',
+        inline: false
+    });
+
     // Other commands section
     embed.addFields({
         name: '🏆 Other Commands',
