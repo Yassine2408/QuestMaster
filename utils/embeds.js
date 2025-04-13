@@ -298,7 +298,9 @@ function createShopEmbed(playerGold) {
       'strength_potion',
       'pet_food',
       'pet_toy',
-      'pet_treat'
+      'pet_treat',
+      'pet_egg',
+      'rare_pet_egg'
     ];
     
     const embed = new EmbedBuilder()
