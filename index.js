@@ -1050,7 +1050,7 @@ async function handleCraftCommand(message, playerData, args) {
 
   if (!args.length) {
     // Display available recipes
-    const recipesEmbed = new MessageEmbed()
+    const recipesEmbed = new EmbedBuilder()
       .setTitle('⚒️ Crafting Recipes')
       .setColor(CONFIG.embedColor)
       .setDescription('Here are the available crafting recipes:');
@@ -1068,7 +1068,7 @@ async function handleCraftCommand(message, playerData, args) {
       recipeText += '\n';
     }
     
-    recipesEmbed.addField('Recipes', recipeText || 'No recipes available');
+    recipesEmbed.addFields({ name: 'Recipes', value: recipeText || 'No recipes available' });
     return message.channel.send({ embeds: [recipesEmbed] });
   }
 
@@ -1132,15 +1132,17 @@ async function handleCraftCommand(message, playerData, args) {
   const levelUps = awardXP(playerData, xpReward);
   
   // Create crafting embed
-  const craftEmbed = new MessageEmbed()
+  const craftEmbed = new EmbedBuilder()
     .setTitle('⚒️ Item Crafted')
     .setColor(CONFIG.embedColor)
     .setDescription(`You crafted ${recipe.count || 1}x **${resultItem.name}**!`)
-    .addField('Materials Used', Object.entries(recipe.materials).map(([id, qty]) => `${ITEMS[id].name}: ${qty}`).join('\n'))
-    .addField('Experience', `+${xpReward} XP`, true);
+    .addFields(
+      { name: 'Materials Used', value: Object.entries(recipe.materials).map(([id, qty]) => `${ITEMS[id].name}: ${qty}`).join('\n'), inline: false },
+      { name: 'Experience', value: `+${xpReward} XP`, inline: true }
+    );
   
   if (levelUps > 0) {
-    craftEmbed.addField('Level Up!', `You are now level ${playerData.level}!`, true);
+    craftEmbed.addFields({ name: 'Level Up!', value: `You are now level ${playerData.level}!`, inline: true });
   }
   
   message.channel.send({ embeds: [craftEmbed] });
@@ -1193,15 +1195,19 @@ async function handleEquipCommand(message, playerData, args) {
   updatePlayerStats(playerData);
   
   // Create equip embed
-  const equipEmbed = new MessageEmbed()
+  const equipEmbed = new EmbedBuilder()
     .setTitle('⚔️ Item Equipped')
     .setColor(CONFIG.embedColor)
     .setDescription(`You equipped ${item.name}!`)
-    .addField('Slot', slot.charAt(0).toUpperCase() + slot.slice(1), true)
-    .addField(slot === 'weapon' ? 'Attack Power' : 'Defense', `+${slot === 'weapon' ? item.power : item.defense}`, true);
+    .addFields(
+      { name: 'Slot', value: slot.charAt(0).toUpperCase() + slot.slice(1), inline: true },
+      { name: slot === 'weapon' ? 'Attack Power' : 'Defense', value: `+${slot === 'weapon' ? item.power : item.defense}`, inline: true }
+    );
   
   if (previousItemId) {
-    equipEmbed.addField('Previous Item', `${ITEMS[previousItemId].name} was returned to your inventory`, false);
+    equipEmbed.addFields(
+      { name: 'Previous Item', value: `${ITEMS[previousItemId].name} was returned to your inventory`, inline: false }
+    );
   }
   
   message.channel.send({ embeds: [equipEmbed] });
@@ -1865,14 +1871,16 @@ async function handleStatsCommand(message, playerData) {
   // Update stats first to make sure they're current
   updatePlayerStats(playerData);
   
-  const statsEmbed = new MessageEmbed()
+  const statsEmbed = new EmbedBuilder()
     .setTitle(`${message.author.username}'s Stats`)
     .setColor(CONFIG.embedColor)
-    .addField('Level', `${playerData.level} (${playerData.xp}/${helpers.getXpForLevel(playerData.level)} XP)`, true)
-    .addField('Health', `${playerData.stats.currentHealth}/${playerData.stats.maxHealth}`, true)
-    .addField('Gold', `${playerData.gold} ${CONFIG.currency}`, true)
-    .addField('Strength', `${playerData.stats.strength}`, true)
-    .addField('Defense', `${playerData.stats.defense}`, true);
+    .addFields(
+      { name: 'Level', value: `${playerData.level} (${playerData.xp}/${helpers.getXpForLevel(playerData.level)} XP)`, inline: true },
+      { name: 'Health', value: `${playerData.stats.currentHealth}/${playerData.stats.maxHealth}`, inline: true },
+      { name: 'Gold', value: `${playerData.gold} ${CONFIG.currency}`, inline: true },
+      { name: 'Strength', value: `${playerData.stats.strength}`, inline: true },
+      { name: 'Defense', value: `${playerData.stats.defense}`, inline: true }
+    );
   
   // Add equipped items
   let equippedText = 'None';
@@ -1885,7 +1893,7 @@ async function handleStatsCommand(message, playerData) {
       equippedText += `Armor: ${ITEMS[playerData.equipped.armor].name} (+${ITEMS[playerData.equipped.armor].defense} DEF)`;
     }
   }
-  statsEmbed.addField('Equipped', equippedText, false);
+  statsEmbed.addFields({ name: 'Equipped', value: equippedText, inline: false });
   
   // Add active buffs if any
   if (playerData.buffs) {
@@ -1899,19 +1907,20 @@ async function handleStatsCommand(message, playerData) {
     }
     
     if (buffsText) {
-      statsEmbed.addField('Active Buffs', buffsText, false);
+      statsEmbed.addFields({ name: 'Active Buffs', value: buffsText, inline: false });
     }
   }
   
   // Add pet info if exists
   if (playerData.pet) {
-    statsEmbed.addField('Pet', 
-      `${playerData.petStats.name} (${playerData.petStats.type})\n` +
-      `Level: ${playerData.petStats.level}\n` +
-      `Happiness: ${playerData.petStats.happiness}/100\n` +
-      `Hunger: ${playerData.petStats.hunger}/100`, 
-      false
-    );
+    statsEmbed.addFields({ 
+      name: 'Pet', 
+      value: `${playerData.petStats.name} (${playerData.petStats.type})\n` +
+             `Level: ${playerData.petStats.level}\n` +
+             `Happiness: ${playerData.petStats.happiness}/100\n` +
+             `Hunger: ${playerData.petStats.hunger}/100`,
+      inline: false
+    });
   }
   
   message.channel.send({ embeds: [statsEmbed] });
@@ -1930,20 +1939,22 @@ async function handleAchievementsCommand(message, playerData) {
     { id: 'pet_master', name: 'Pet Master', description: 'Raise a pet to level 10', reward: 'Rare Pet Egg' }
   ];
   
-  const achievementsEmbed = new MessageEmbed()
+  const achievementsEmbed = new EmbedBuilder()
     .setTitle(`${message.author.username}'s Achievements`)
     .setColor(CONFIG.embedColor)
     .setDescription('Track your accomplishments:');
   
   // Add achievements with completion status
-  for (const achievement of achievements) {
+  const achievementFields = achievements.map(achievement => {
     const unlocked = playerData.achievements.includes(achievement.id);
-    
-    achievementsEmbed.addField(
-      `${unlocked ? '✅' : '❌'} ${achievement.name}`,
-      `${achievement.description}\nReward: ${achievement.reward}`
-    );
-  }
+    return {
+      name: `${unlocked ? '✅' : '❌'} ${achievement.name}`,
+      value: `${achievement.description}\nReward: ${achievement.reward}`,
+      inline: false
+    };
+  });
+  
+  achievementsEmbed.addFields(achievementFields);
   
   achievementsEmbed.setFooter({ text: `${playerData.achievements.length}/${achievements.length} achievements completed` });
   
