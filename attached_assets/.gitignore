@@ -1,0 +1,25 @@
+# Dependency directories
+node_modules/
+
+# Runtime data
+.replit
+.breakpoints
+replit.nix
+.config/
+
+# Environment variables
+.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Optional npm cache directory
+.npm
+
+# Editor-specific files
+.idea/
+.vscode/
+*.swp
+*.swo
