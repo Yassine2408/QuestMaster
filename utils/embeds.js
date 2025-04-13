@@ -27,7 +27,7 @@ function createProfileEmbed(user, playerData) {
         .setColor(CONFIG.embedColor)
         .setAuthor({ name: 'QuestForge RPG', iconURL: user.displayAvatarURL() })
         .setThumbnail(user.displayAvatarURL({ dynamic: true }));
-    
+
     // Main character stats
     embed.addFields(
         { name: 'Level', value: `${playerData.level} (${playerData.xp}/${helpers.getXpForLevel(playerData.level)} XP)`, inline: true },
@@ -36,12 +36,12 @@ function createProfileEmbed(user, playerData) {
         { name: 'Strength', value: `${playerData.stats.strength}`, inline: true },
         { name: 'Defense', value: `${playerData.stats.defense}`, inline: true }
     );
-    
+
     // Progress bar for XP
     const xpRequired = helpers.getXpForLevel(playerData.level);
     const xpProgress = helpers.getProgressBar(playerData.xp, xpRequired, 10);
     embed.addFields({ name: 'XP Progress', value: `${xpProgress} (${playerData.xp}/${xpRequired})`, inline: false });
-    
+
     // Equipped items
     let equippedText = 'None';
     if (playerData.equipped.weapon || playerData.equipped.armor) {
@@ -56,7 +56,7 @@ function createProfileEmbed(user, playerData) {
         }
     }
     embed.addFields({ name: 'Equipped Items', value: equippedText, inline: false });
-    
+
     // Pet info if player has one
     if (playerData.pet) {
         const petText = `${playerData.petStats.name} (Level ${playerData.petStats.level})\n` +
@@ -65,74 +65,74 @@ function createProfileEmbed(user, playerData) {
                       `Hunger: ${playerData.petStats.hunger}/100`;
         embed.addFields({ name: 'Pet Companion', value: petText, inline: false });
     }
-    
+
     // Show active buffs if any
     if (playerData.buffs) {
         let buffsText = '';
         const now = Date.now();
-        
+
         for (const [buffType, buff] of Object.entries(playerData.buffs)) {
             if (now < buff.expiresAt) {
                 const timeLeft = helpers.formatDuration(buff.expiresAt - now);
                 buffsText += `${helpers.capitalizeFirst(buffType)}: +${buff.amount} (${timeLeft} remaining)\n`;
             }
         }
-        
+
         if (buffsText) {
             embed.addFields({ name: 'Active Buffs', value: buffsText, inline: false });
         }
     }
-    
+
     // Show quest count
     if (playerData.quests) {
         const activeQuestCount = playerData.quests.active.length;
         const completedQuestCount = playerData.quests.completed.length;
         embed.addFields({ name: 'Quests', value: `${activeQuestCount} Active, ${completedQuestCount} Completed`, inline: true });
     }
-    
+
     // Show achievement count
     const achievementCount = playerData.achievements.length;
     embed.addFields({ name: 'Achievements', value: `${achievementCount} Unlocked`, inline: true });
-    
+
     // Show membership duration
     if (playerData.joinedAt) {
         const joinedDate = new Date(playerData.joinedAt);
         const daysSinceJoined = Math.floor((Date.now() - playerData.joinedAt) / (1000 * 60 * 60 * 24));
         embed.addFields({ name: 'Player Since', value: `${joinedDate.toDateString()} (${daysSinceJoined} days)`, inline: false });
     }
-    
+
     // Add cooldowns at the bottom
     const now = Date.now();
     let cooldownText = '';
-    
+
     if (now < playerData.cooldowns.farm) {
         cooldownText += `Farm: ${helpers.formatCooldown(playerData.cooldowns.farm - now)}\n`;
     }
-    
+
     if (now < playerData.cooldowns.mine) {
         cooldownText += `Mine: ${helpers.formatCooldown(playerData.cooldowns.mine - now)}\n`;
     }
-    
+
     if (now < playerData.cooldowns.hunt) {
         cooldownText += `Hunt: ${helpers.formatCooldown(playerData.cooldowns.hunt - now)}\n`;
     }
-    
+
     if (now < playerData.cooldowns.fish) {
         cooldownText += `Fish: ${helpers.formatCooldown(playerData.cooldowns.fish - now)}\n`;
     }
-    
+
     if (now < playerData.cooldowns.adventure) {
         cooldownText += `Adventure: ${helpers.formatCooldown(playerData.cooldowns.adventure - now)}\n`;
     }
-    
+
     if (now < playerData.cooldowns.daily) {
         cooldownText += `Daily: ${helpers.formatCooldown(playerData.cooldowns.daily - now)}\n`;
     }
-    
+
     if (cooldownText) {
         embed.addFields({ name: 'Cooldowns', value: cooldownText, inline: false });
     }
-    
+
     return embed;
 }
 
@@ -142,7 +142,7 @@ function createHelpEmbed() {
         .setTitle('🔮 QuestForge RPG Help')
         .setColor(CONFIG.embedColor)
         .setDescription('Welcome to QuestForge! Here are the available commands:');
-    
+
     // Basic commands section
     embed.addFields({
         name: '🧙 Basic Commands',
@@ -151,10 +151,12 @@ function createHelpEmbed() {
               '`!inventory` or `!inv` - View your inventory\n' +
               '`!balance` or `!gold` - Check your gold balance\n' +
               '`!stats` - View detailed character stats\n' +
-              '`!achievements` - View your achievements',
+              '`!achievements` - View your achievements\n' +
+              '`!class` - View available classes\n' +
+              '`!class select <classname>` - Choose your class',
         inline: false
     });
-    
+
     // Resource gathering section
     embed.addFields({
         name: '🌾 Resource Gathering',
@@ -165,7 +167,7 @@ function createHelpEmbed() {
               '`!daily` - Claim your daily reward',
         inline: false
     });
-    
+
     // Adventure section
     embed.addFields({
         name: '⚔️ Adventure',
@@ -174,7 +176,7 @@ function createHelpEmbed() {
               '`!heal` - Heal your character (costs gold)',
         inline: false
     });
-    
+
     // Economy section
     embed.addFields({
         name: '💰 Economy',
@@ -183,7 +185,7 @@ function createHelpEmbed() {
               '`!shop sell <item> [quantity]` - Sell an item',
         inline: false
     });
-    
+
     // Inventory & Equipment section
     embed.addFields({
         name: '📦 Inventory & Equipment',
@@ -196,7 +198,7 @@ function createHelpEmbed() {
               '`!craft <item>` - Craft an item',
         inline: false
     });
-    
+
     // Pet system section
     embed.addFields({
         name: '🐾 Pet System',
@@ -207,7 +209,7 @@ function createHelpEmbed() {
               '`!pet rename` - Rename your pet',
         inline: false
     });
-    
+
     // Quest system section
     embed.addFields({
         name: '📜 Quest System',
@@ -217,7 +219,7 @@ function createHelpEmbed() {
               '`!quest completed` - View your completed quests',
         inline: false
     });
-    
+
     // Party system section
     embed.addFields({
         name: '👥 Party System',
@@ -227,7 +229,26 @@ function createHelpEmbed() {
               '`!party leave` - Leave your current party',
         inline: false
     });
-    
+
+    // Class system section
+    embed.addFields({
+        name: '⚜️ Class System',
+        value: '`!class` - View all available classes and their abilities\n' +
+               '`!class info <classname>` - View detailed information about a specific class\n' +
+               '`!class select <classname>` - Choose your character class\n' +
+               '`!class abilities` - View your class abilities',
+        inline: false
+    });
+
+        // Combat section
+    embed.addFields({
+        name: '⚔️ Combat Commands',
+        value: '`!adventure [location]` - Go on an adventure\n' +
+               '`!hunt` - Hunt for resources and XP\n' +
+               '`!pvp @player` - Challenge another player to a PvP duel',
+        inline: false
+    });
+
     // Other commands section
     embed.addFields({
         name: '🏆 Other Commands',
@@ -237,7 +258,7 @@ function createHelpEmbed() {
               '`!leaderboard craft` - View top crafters',
         inline: false
     });
-    
+
     return embed;
 }
 
@@ -247,12 +268,12 @@ function createLeaderboardEmbed(players, category, title) {
         .setTitle(`🏆 ${title}`)
         .setColor(CONFIG.embedColor)
         .setDescription(`Top ${players.length} players by ${category}:`);
-    
+
     const fields = [];
     players.forEach((player, index) => {
         const [playerId, playerData] = player;
         let value;
-        
+
         switch (category) {
             case 'level':
                 value = `Level ${playerData.level} (${playerData.xp}/${helpers.getXpForLevel(playerData.level)} XP)`;
@@ -271,14 +292,14 @@ function createLeaderboardEmbed(players, category, title) {
                 value = `${playerData.quests?.completed.length || 0} quests completed`;
                 break;
         }
-        
+
         fields.push({
             name: `#${index + 1} ${playerData.username || 'Unknown'}`,
             value: value,
             inline: true
         });
     });
-    
+
     embed.addFields(fields);
     return embed;
 }
@@ -302,12 +323,12 @@ function createShopEmbed(playerGold) {
       'pet_egg',
       'rare_pet_egg'
     ];
-    
+
     const embed = new EmbedBuilder()
         .setTitle('🛒 Item Shop')
         .setColor(CONFIG.embedColor)
         .setDescription(`Welcome to the shop! You have ${playerGold} ${CONFIG.currency}\n\nUse \`!shop buy <item>\` to purchase an item.\nUse \`!shop sell <item> [quantity]\` to sell items.`);
-    
+
     // Group items by category
     const categories = {
         weapon: [],
@@ -319,7 +340,7 @@ function createShopEmbed(playerGold) {
     for (const itemId of SHOP_ITEMS) {
         const item = ITEMS[itemId];
         if (!item) continue;
-        
+
         let itemText = `**${item.name}** - ${item.description} - Price: ${item.value} ${CONFIG.currency}\n`;
 
         if (item.requirements) {
@@ -350,7 +371,7 @@ function createShopEmbed(playerGold) {
             });
         }
     }
-    
+
     return embed;
 }
 
@@ -360,7 +381,7 @@ function createQuestEmbed(quest, progress) {
         .setTitle(`📜 Quest: ${quest.name}`)
         .setColor(CONFIG.embedColor)
         .setDescription(quest.description);
-    
+
     // Add objective based on quest type
     let objectiveText = '';
     switch (quest.type) {
@@ -377,37 +398,37 @@ function createQuestEmbed(quest, progress) {
             objectiveText = `Craft ${quest.target}x ${quest.itemName || quest.itemType}`;
             break;
     }
-    
+
     embed.addFields({ name: 'Objective', value: objectiveText, inline: false });
-    
+
     // Add progress if available
     if (progress !== undefined) {
         const progressBar = helpers.getProgressBar(progress, quest.target, 10);
         embed.addFields({ name: 'Progress', value: `${progressBar} (${progress}/${quest.target})`, inline: false });
     }
-    
+
     // Add rewards
     let rewardText = `${quest.reward.gold} ${CONFIG.currency}\n${quest.reward.xp} XP`;
-    
+
     if (quest.reward.item) {
         const itemName = require('../data/items')[quest.reward.item]?.name || quest.reward.item;
         rewardText += `\n${quest.reward.itemQuantity || 1}x ${itemName}`;
     }
-    
+
     embed.addFields({ name: 'Rewards', value: rewardText, inline: false });
-    
+
     // Add difficulty indicator
     let difficulty = '';
     if (quest.minLevel <= 5) difficulty = 'Easy';
     else if (quest.minLevel <= 15) difficulty = 'Medium';
     else if (quest.minLevel <= 25) difficulty = 'Hard';
     else difficulty = 'Very Hard';
-    
+
     embed.addFields(
         { name: 'Difficulty', value: difficulty, inline: true },
         { name: 'Required Level', value: quest.minLevel.toString(), inline: true }
     );
-    
+
     return embed;
 }
 
@@ -419,33 +440,33 @@ function createPetStatusEmbed(playerData) {
             .setColor(CONFIG.embedColor)
             .setDescription("You don't have a pet yet! Use `!pet adopt` to adopt one.");
     }
-    
+
     const petData = require('../data/pets').find(pet => pet.type === playerData.pet);
-    
+
     const embed = new EmbedBuilder()
         .setTitle(`🐾 ${playerData.petStats.name} (${petData?.name || playerData.pet})`)
         .setColor(CONFIG.embedColor)
         .setDescription(`Your level ${playerData.petStats.level} pet companion!`);
-    
+
     // XP progress bar
     const petXpRequired = require('../systems/pets').getPetXpForLevel(playerData.petStats.level);
     const petXpProgress = helpers.getProgressBar(playerData.petStats.xp, petXpRequired, 10);
-    
+
     embed.addFields({
         name: 'Level',
         value: `${playerData.petStats.level} (${playerData.petStats.xp}/${petXpRequired} XP)\n${petXpProgress}`,
         inline: false
     });
-    
+
     // Happiness and hunger bars
     const happinessBar = helpers.getProgressBar(playerData.petStats.happiness, 100, 10);
     const hungerBar = helpers.getProgressBar(playerData.petStats.hunger, 100, 10);
-    
+
     embed.addFields(
         { name: 'Happiness', value: `${happinessBar} (${playerData.petStats.happiness}/100)`, inline: true },
         { name: 'Hunger', value: `${hungerBar} (${playerData.petStats.hunger}/100)`, inline: true }
     );
-    
+
     // Pet bonuses
     const petBonus = Math.floor(playerData.petStats.level / 2);
     embed.addFields({
@@ -453,15 +474,15 @@ function createPetStatusEmbed(playerData) {
         value: `+${petBonus} Strength\n+${petBonus} Defense\n+${petBonus * 5} Max Health`,
         inline: false
     });
-    
+
     // Pet abilities
     if (petData && petData.abilities) {
         const unlockedAbilities = petData.abilities
             .filter(ability => ability.level <= playerData.petStats.level);
-        
+
         const lockedAbilities = petData.abilities
             .filter(ability => ability.level > playerData.petStats.level);
-        
+
         if (unlockedAbilities.length > 0) {
             embed.addFields({
                 name: 'Abilities',
@@ -469,7 +490,7 @@ function createPetStatusEmbed(playerData) {
                 inline: false
             });
         }
-        
+
         if (lockedAbilities.length > 0) {
             embed.addFields({
                 name: 'Locked Abilities',
@@ -478,7 +499,7 @@ function createPetStatusEmbed(playerData) {
             });
         }
     }
-    
+
     return embed;
 }
 
@@ -487,26 +508,26 @@ function createNotificationEmbed(playerData) {
     const embed = new EmbedBuilder()
         .setTitle('📬 Your Notifications')
         .setColor(CONFIG.embedColor);
-    
+
     if (!playerData.notifications || playerData.notifications.length === 0) {
         embed.setDescription('You have no notifications.');
         return embed;
     }
-    
+
     const recentNotifications = playerData.notifications.slice(0, 10);
     let notificationText = '';
-    
+
     recentNotifications.forEach((notification, index) => {
         const timeAgo = helpers.formatTimeAgo(notification.timestamp);
         notificationText += `**${index + 1}. ${timeAgo}**\n${notification.message}\n\n`;
     });
-    
+
     embed.setDescription(notificationText);
-    
+
     if (playerData.notifications.length > 10) {
         embed.setFooter({ text: `Showing 10 of ${playerData.notifications.length} notifications. Older notifications are automatically cleared after 7 days.` });
     }
-    
+
     return embed;
 }
 
