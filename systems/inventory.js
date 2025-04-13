@@ -1,4 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, StringSelectMenuBuilder, ButtonStyle, ApplicationCommandType } = require('discord.js');
+const ITEMS = require('../data/items');
+const { CLASSES } = require('../data/classes');
 
 async function handleInventoryCommand(message, playerData, args) {
     const ITEMS = require('../data/items');
@@ -95,11 +97,8 @@ async function handleInventoryCommand(message, playerData, args) {
     await message.channel.send({ embeds: [inventoryEmbed], components: [row] });
 }
 
-async function handleShopCommand(message, playerData, args) {
-    const ITEMS = require('../data/items');
-    const CONFIG = require('../index').CONFIG;
-    const { saveData } = require('../index');
 
+async function handleShopCommand(message, playerData, args) {
     if (!args.length) {
         // Create category buttons
         const row = new ActionRowBuilder()
@@ -122,13 +121,13 @@ async function handleShopCommand(message, playerData, args) {
                     .setStyle(ButtonStyle.Primary)
             );
 
-        // Display shop items
+        // Display shop items based on player's class
         const shopEmbed = new EmbedBuilder()
             .setTitle('🛒 Item Shop')
-            .setColor(CONFIG.embedColor)
-            .setDescription(`Welcome to the shop! You have ${playerData.gold} ${CONFIG.currency}\n\nClick a category to view items.`);
+            .setColor('#7289DA')
+            .setDescription(`Welcome to the shop! You have ${playerData.gold} 🪙\n\nSelect a category to view items.`);
 
-        // Group items by category
+        // Filter and group items by category and class requirements
         const categories = {
             Weapons: [],
             Armor: [],
@@ -136,11 +135,15 @@ async function handleShopCommand(message, playerData, args) {
             Pets: []
         };
 
-        // Sort items into categories
         for (const [itemId, item] of Object.entries(ITEMS)) {
             if (!item.value) continue; // Skip items that can't be bought
 
-            let itemText = `**${item.name}** - ${item.description}\nPrice: ${item.value} ${CONFIG.currency}\n`;
+            // Check class restrictions if they exist
+            if (item.classRestrictions && !item.classRestrictions.includes(playerData.class)) {
+                continue;
+            }
+
+            let itemText = `**${item.name}** - ${item.description}\nPrice: ${item.value} 🪙\n`;
 
             if (item.requirements) {
                 itemText += `Level Required: ${item.requirements.level}\n`;
@@ -153,13 +156,16 @@ async function handleShopCommand(message, playerData, args) {
                 itemText += `Defense: +${item.defense}\n`;
                 categories.Armor.push(itemText);
             } else if (item.type === 'consumable') {
+                if (item.effect) {
+                    itemText += `Effect: ${item.effect} (+${item.power})\n`;
+                }
                 categories.Consumables.push(itemText);
             } else if (item.type === 'pet') {
                 categories.Pets.push(itemText);
             }
         }
 
-        // Add each category to the embed
+        // Add categories to embed
         for (const [category, items] of Object.entries(categories)) {
             if (items.length > 0) {
                 shopEmbed.addFields({
@@ -177,7 +183,7 @@ async function handleShopCommand(message, playerData, args) {
 
         // Create collector for button interactions
         const collector = msg.createMessageComponentCollector({
-            time: 60000 // 1 minute timeout
+            time: 60000
         });
 
         collector.on('collect', async i => {
@@ -186,88 +192,141 @@ async function handleShopCommand(message, playerData, args) {
             }
 
             const category = i.customId.split('_')[1];
-
-            // Filter items by category
-            const categoryItems = Object.entries(ITEMS).filter(([id, item]) => {
-                if (category === 'weapons') return item.type === 'weapon';
-                if (category === 'armor') return item.type === 'armor';
-                if (category === 'consumables') return item.type === 'consumable';
-                if (category === 'pets') return item.type === 'pet';
-                return false;
-            });
-
-            // Create buy buttons for items
-            const itemRows = [];
-            let currentRow = new ActionRowBuilder();
-            let buttonCount = 0;
-
-            for (const [itemId, item] of categoryItems) {
-                if (buttonCount === 5) { // Max 5 buttons per row
-                    itemRows.push(currentRow);
-                    currentRow = new ActionRowBuilder();
-                    buttonCount = 0;
-                }
-
-                currentRow.addComponents(
-                    new ButtonBuilder()
-                        .setCustomId(`buy_${itemId}`)
-                        .setLabel(`${item.name} (${item.value} ${CONFIG.currency})`)
-                        .setStyle(ButtonStyle.Secondary)
-                );
-                buttonCount++;
-            }
-
-            if (buttonCount > 0) {
-                itemRows.push(currentRow);
-            }
-
-            // Update embed with category items
-            const categoryEmbed = new EmbedBuilder()
-                .setTitle(`🛒 ${category.charAt(0).toUpperCase() + category.slice(1)}`)
-                .setColor(CONFIG.embedColor)
-                .setDescription(`Your gold: ${playerData.gold} ${CONFIG.currency}\nClick an item to purchase it.`);
+            const filteredItems = filterItemsByCategory(category, playerData);
+            const categoryEmbed = createCategoryEmbed(category, playerData, filteredItems);
 
             await i.update({
                 embeds: [categoryEmbed],
-                components: itemRows
+                components: createItemButtons(filteredItems)
             });
-        });
-
-        collector.on('collect', async i => {
-            if (i.user.id !== message.author.id) {
-                return i.reply({ content: 'Only the command user can use these buttons!', ephemeral: true });
-            }
-
-            const category = i.customId.split('_')[1];
-            const categoryEmbed = createCategoryEmbed(category, playerData.gold);
-            await i.update({ embeds: [categoryEmbed] });
         });
 
         return;
     }
 
-    function createCategoryEmbed(category, gold) {
-        const embed = new EmbedBuilder()
-            .setTitle(`🛒 ${category.charAt(0).toUpperCase() + category.slice(1)}`)
-            .setColor(CONFIG.embedColor)
-            .setDescription(`Your gold: ${gold} ${CONFIG.currency}`);
+    // Handle buy/sell commands
+    const action = args[0].toLowerCase();
+    if (action === 'buy') {
+        if (!args[1]) {
+            return message.reply('Please specify an item to buy. Use `!shop` to see available items.');
+        }
 
-        const items = Object.values(ITEMS).filter(item => {
-            if (category === 'weapons') return item.type === 'weapon';
-            if (category === 'armor') return item.type === 'armor';
-            if (category === 'potions') return item.type === 'consumable';
-            return false;
-        });
+        const itemId = args[1].toLowerCase();
+        const item = ITEMS[itemId];
 
-        items.forEach(item => {
-            embed.addFields({
+        if (!item || !item.value) {
+            return message.reply('That item is not available in the shop.');
+        }
+
+        // Check class restrictions
+        if (item.classRestrictions && !item.classRestrictions.includes(playerData.class)) {
+            return message.reply('Your class cannot use this item.');
+        }
+
+        // Check level requirement
+        if (item.requirements && playerData.level < item.requirements.level) {
+            return message.reply(`You need to be level ${item.requirements.level} to purchase this item.`);
+        }
+
+        // Check if player has enough gold
+        if (playerData.gold < item.value) {
+            return message.reply(`You don't have enough gold to buy ${item.name}.`);
+        }
+
+        // Process purchase
+        playerData.gold -= item.value;
+        addItemToInventory(playerData, itemId);
+        return message.reply(`You purchased ${item.name} for ${item.value} 🪙.`);
+    }
+
+    if (action === 'sell') {
+        if (!args[1]) {
+            return message.reply('Please specify an item to sell.');
+        }
+
+        const itemId = args[1].toLowerCase();
+        const quantity = args[2] ? parseInt(args[2]) : 1;
+
+        if (!playerData.inventory[itemId] || playerData.inventory[itemId] < quantity) {
+            return message.reply(`You don't have enough of this item to sell.`);
+        }
+
+        const item = ITEMS[itemId];
+        const sellValue = Math.floor(item.value * 0.6) * quantity;
+
+        // Process sale
+        removeItemFromInventory(playerData, itemId, quantity);
+        playerData.gold += sellValue;
+        return message.reply(`You sold ${quantity}x ${item.name} for ${sellValue} 🪙.`);
+    }
+}
+
+function filterItemsByCategory(category, playerData) {
+    return Object.entries(ITEMS).filter(([id, item]) => {
+        if (!item.value) return false;
+        if (item.classRestrictions && !item.classRestrictions.includes(playerData.class)) return false;
+
+        switch (category) {
+            case 'weapons': return item.type === 'weapon';
+            case 'armor': return item.type === 'armor';
+            case 'consumables': return item.type === 'consumable';
+            case 'pets': return item.type === 'pet';
+            default: return false;
+        }
+    });
+}
+
+function createCategoryEmbed(category, playerData, items) {
+    return new EmbedBuilder()
+        .setTitle(`🛒 ${category.charAt(0).toUpperCase() + category.slice(1)}`)
+        .setColor('#7289DA')
+        .setDescription(`Your gold: ${playerData.gold} 🪙\nClick an item to purchase it.`)
+        .addFields(
+            items.map(([id, item]) => ({
                 name: item.name,
-                value: `Price: ${item.value} ${CONFIG.currency}\n${item.description}`,
+                value: `Price: ${item.value} 🪙\n${item.description}`,
                 inline: true
-            });
-        });
+            }))
+        );
+}
 
-        return embed;
+function createItemButtons(items) {
+    const rows = [];
+    let currentRow = new ActionRowBuilder();
+    let buttonCount = 0;
+
+    items.forEach(([id, item]) => {
+        if (buttonCount === 5) {
+            rows.push(currentRow);
+            currentRow = new ActionRowBuilder();
+            buttonCount = 0;
+        }
+
+        currentRow.addComponents(
+            new ButtonBuilder()
+                .setCustomId(`buy_${id}`)
+                .setLabel(`${item.name} (${item.value} 🪙)`)
+                .setStyle(ButtonStyle.Secondary)
+        );
+        buttonCount++;
+    });
+
+    if (buttonCount > 0) {
+        rows.push(currentRow);
+    }
+
+    return rows;
+}
+
+function addItemToInventory(playerData, itemId) {
+    playerData.inventory[itemId] = (playerData.inventory[itemId] || 0) + 1;
+}
+
+
+function removeItemFromInventory(playerData, itemId, quantity) {
+    playerData.inventory[itemId] -= quantity;
+    if (playerData.inventory[itemId] <= 0) {
+        delete playerData.inventory[itemId];
     }
 }
 

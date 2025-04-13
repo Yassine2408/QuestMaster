@@ -25,7 +25,17 @@ const ITEMS = {
     'sapphire': { id: 'sapphire', name: 'Sapphire', description: 'A brilliant blue gemstone', value: 180, type: 'material' },
 
     // Weapons
-    'wooden_sword': { id: 'wooden_sword', name: 'Wooden Sword', description: 'A basic sword made of wood', value: 50, type: 'weapon', power: 5, requirements: { level: 1 } },
+    // Warrior Weapons
+    'wooden_sword': { id: 'wooden_sword', name: 'Wooden Sword', description: 'A basic sword made of wood', value: 50, type: 'weapon', power: 5, requirements: { level: 1 }, classRestrictions: ['warrior'] },
+    'battle_axe': { id: 'battle_axe', name: 'Battle Axe', description: 'A heavy axe for warriors', value: 300, type: 'weapon', power: 25, requirements: { level: 10 }, classRestrictions: ['warrior'] },
+    
+    // Ranger Weapons
+    'hunting_bow': { id: 'hunting_bow', name: 'Hunting Bow', description: 'A basic bow for rangers', value: 50, type: 'weapon', power: 6, requirements: { level: 1 }, classRestrictions: ['ranger'] },
+    'longbow': { id: 'longbow', name: 'Longbow', description: 'A powerful bow with extended range', value: 300, type: 'weapon', power: 28, requirements: { level: 10 }, classRestrictions: ['ranger'] },
+    
+    // Mage Weapons
+    'apprentice_staff': { id: 'apprentice_staff', name: 'Apprentice Staff', description: 'A basic magical staff', value: 50, type: 'weapon', power: 7, requirements: { level: 1 }, classRestrictions: ['mage'] },
+    'crystal_wand': { id: 'crystal_wand', name: 'Crystal Wand', description: 'A wand imbued with magical crystals', value: 300, type: 'weapon', power: 30, requirements: { level: 10 }, classRestrictions: ['mage'] },
     'stone_sword': { id: 'stone_sword', name: 'Stone Sword', description: 'A sword made of stone', value: 100, type: 'weapon', power: 10, requirements: { level: 5 } },
     'iron_sword': { id: 'iron_sword', name: 'Iron Sword', description: 'A reliable sword made of iron', value: 250, type: 'weapon', power: 25, requirements: { level: 10 } },
     'steel_sword': { id: 'steel_sword', name: 'Steel Sword', description: 'A powerful sword made of steel', value: 500, type: 'weapon', power: 40, requirements: { level: 15 } },
