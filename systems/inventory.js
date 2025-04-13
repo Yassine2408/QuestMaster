@@ -101,11 +101,32 @@ async function handleShopCommand(message, playerData, args) {
     const { saveData } = require('../index');
 
     if (!args.length) {
+        // Create category buttons
+        const row = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('shop_weapons')
+                    .setLabel('⚔️ Weapons')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('shop_armor')
+                    .setLabel('🛡️ Armor') 
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('shop_consumables')
+                    .setLabel('🧪 Consumables')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('shop_pets')
+                    .setLabel('🐾 Pet Items')
+                    .setStyle(ButtonStyle.Primary)
+            );
+
         // Display shop items
         const shopEmbed = new EmbedBuilder()
             .setTitle('🛒 Item Shop')
             .setColor(CONFIG.embedColor)
-            .setDescription(`Welcome to the shop! You have ${playerData.gold} ${CONFIG.currency}\n\nUse \`!shop buy <item>\` to purchase items.\nUse \`!shop sell <item> [quantity]\` to sell items.`);
+            .setDescription(`Welcome to the shop! You have ${playerData.gold} ${CONFIG.currency}\n\nClick a category to view items.`);
 
         // Group items by category
         const categories = {
@@ -149,10 +170,68 @@ async function handleShopCommand(message, playerData, args) {
             }
         }
 
-        return message.channel.send({ embeds: [shopEmbed] });
+        const msg = await message.channel.send({ 
+            embeds: [shopEmbed],
+            components: [row]
+        });
 
         // Create collector for button interactions
         const collector = msg.createMessageComponentCollector({
+            time: 60000 // 1 minute timeout
+        });
+
+        collector.on('collect', async i => {
+            if (i.user.id !== message.author.id) {
+                return i.reply({ content: 'Only the command user can use these buttons!', ephemeral: true });
+            }
+
+            const category = i.customId.split('_')[1];
+            
+            // Filter items by category
+            const categoryItems = Object.entries(ITEMS).filter(([id, item]) => {
+                if (category === 'weapons') return item.type === 'weapon';
+                if (category === 'armor') return item.type === 'armor';
+                if (category === 'consumables') return item.type === 'consumable';
+                if (category === 'pets') return item.type === 'pet';
+                return false;
+            });
+
+            // Create buy buttons for items
+            const itemRows = [];
+            let currentRow = new ActionRowBuilder();
+            let buttonCount = 0;
+
+            for (const [itemId, item] of categoryItems) {
+                if (buttonCount === 5) { // Max 5 buttons per row
+                    itemRows.push(currentRow);
+                    currentRow = new ActionRowBuilder();
+                    buttonCount = 0;
+                }
+
+                currentRow.addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(`buy_${itemId}`)
+                        .setLabel(`${item.name} (${item.value} ${CONFIG.currency})`)
+                        .setStyle(ButtonStyle.Secondary)
+                );
+                buttonCount++;
+            }
+
+            if (buttonCount > 0) {
+                itemRows.push(currentRow);
+            }
+
+            // Update embed with category items
+            const categoryEmbed = new EmbedBuilder()
+                .setTitle(`🛒 ${category.charAt(0).toUpperCase() + category.slice(1)}`)
+                .setColor(CONFIG.embedColor)
+                .setDescription(`Your gold: ${playerData.gold} ${CONFIG.currency}\nClick an item to purchase it.`);
+
+            await i.update({ 
+                embeds: [categoryEmbed],
+                components: itemRows
+            });
+        });
             time: 60000 // 1 minute timeout
         });
 
