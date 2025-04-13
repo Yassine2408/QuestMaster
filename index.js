@@ -1833,19 +1833,21 @@ async function handleNotificationsCommand(message, playerData) {
     return message.reply('You have no notifications.');
   }
   
-  const notificationsEmbed = new MessageEmbed()
+  const notificationsEmbed = new EmbedBuilder()
     .setTitle('📬 Your Notifications')
     .setColor(CONFIG.embedColor)
     .setDescription('Your recent notifications:');
   
   // Add last 10 notifications, newest first
-  playerData.notifications.slice(-10).reverse().forEach((notification, index) => {
+  const fields = playerData.notifications.slice(-10).reverse().map((notification, index) => {
     const timeAgo = helpers.formatTimeAgo(notification.timestamp);
-    notificationsEmbed.addField(
-      `#${index + 1} (${timeAgo})`,
-      notification.message
-    );
+    return {
+      name: `#${index + 1} (${timeAgo})`,
+      value: notification.message
+    };
   });
+  
+  notificationsEmbed.addFields(fields);
   
   // Mark all notifications as read
   playerData.notifications.forEach(notification => {

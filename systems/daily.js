@@ -1,5 +1,5 @@
 // Daily rewards system
-const { MessageEmbed } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 
 // Get a random item from the list with weights
 function getRandomWeightedItem(items) {
@@ -112,26 +112,28 @@ async function handleDailyCommand(message, playerData, CONFIG) {
   }
   
   // Create daily reward embed
-  const dailyEmbed = new MessageEmbed()
+  const dailyEmbed = new EmbedBuilder()
     .setTitle('🎁 Daily Reward')
     .setColor(CONFIG.embedColor)
     .setDescription(`You've claimed your daily reward!`)
-    .addField('Streak', `${playerData.dailyStreak} day${playerData.dailyStreak > 1 ? 's' : ''}`, true)
-    .addField('Gold', `+${goldReward} ${CONFIG.currency}`, true);
+    .addFields(
+      { name: 'Streak', value: `${playerData.dailyStreak} day${playerData.dailyStreak > 1 ? 's' : ''}`, inline: true },
+      { name: 'Gold', value: `+${goldReward} ${CONFIG.currency}`, inline: true }
+    );
   
   if (ITEMS[itemReward.id]) {
-    dailyEmbed.addField('Item', `${itemCount}x ${ITEMS[itemReward.id].name}`, true);
+    dailyEmbed.addFields({ name: 'Item', value: `${itemCount}x ${ITEMS[itemReward.id].name}`, inline: true });
   }
   
   if (milestoneReward) {
-    dailyEmbed.addField('Milestone Reward', milestoneReward.message, false);
+    dailyEmbed.addFields({ name: 'Milestone Reward', value: milestoneReward.message, inline: false });
   }
   
   // Add info about next milestone
   if (playerData.dailyStreak < 7) {
-    dailyEmbed.addField('Next Milestone', `7-day streak: Steel Sword (${7 - playerData.dailyStreak} days left)`, false);
+    dailyEmbed.addFields({ name: 'Next Milestone', value: `7-day streak: Steel Sword (${7 - playerData.dailyStreak} days left)`, inline: false });
   } else if (playerData.dailyStreak < 30) {
-    dailyEmbed.addField('Next Milestone', `30-day streak: Mythril Armor (${30 - playerData.dailyStreak} days left)`, false);
+    dailyEmbed.addFields({ name: 'Next Milestone', value: `30-day streak: Mythril Armor (${30 - playerData.dailyStreak} days left)`, inline: false });
   }
   
   // Show daily streak icon pattern
@@ -148,7 +150,7 @@ async function handleDailyCommand(message, playerData, CONFIG) {
   }
   
   if (streakDisplay) {
-    dailyEmbed.addField('Streak Progress', streakDisplay, false);
+    dailyEmbed.addFields({ name: 'Streak Progress', value: streakDisplay, inline: false });
   }
   
   message.channel.send({ embeds: [dailyEmbed] });
