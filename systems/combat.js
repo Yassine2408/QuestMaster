@@ -327,7 +327,7 @@ async function runCombat(message, playerData, enemies, adventureMsg) {
         const filter = i => i.customId.startsWith('combat_') && i.user.id === message.author.id;
 
         try {
-            const collected = await adventureMsg.awaitMessageComponent({ filter, time: 30000 });
+            const collected = await adventureMsg.awaitMessageComponent({ filter, time: 60000 });
             await collected.deferUpdate();
 
             // Process player action
