@@ -394,7 +394,7 @@ async function runCombat(message, playerData, enemies, adventureMsg) {
 
 // Create combat embed
 function createCombatEmbed(combatState) {
-    const embed = new MessageEmbed()
+    const embed = new EmbedBuilder()
         .setTitle(`⚔️ Combat - Turn ${combatState.turn}`)
         .setColor(require('../index').CONFIG.embedColor);
     
@@ -410,13 +410,13 @@ function createCombatEmbed(combatState) {
         healthBar = '🟥'.repeat(Math.ceil(healthPercent / 10));
     }
     
-    embed.addField(
-        '🧙 You',
-        `Health: ${combatState.playerHealth}/${combatState.playerMaxHealth}\n` +
+    embed.addFields({
+        name: '🧙 You',
+        value: `Health: ${combatState.playerHealth}/${combatState.playerMaxHealth}\n` +
         `${healthBar}\n` +
         `Attack: ${combatState.playerStrength} | Defense: ${combatState.playerDefense}`,
-        false
-    );
+        inline: false
+    });
     
     // Enemies
     combatState.enemies.forEach((enemy, index) => {
@@ -431,11 +431,11 @@ function createCombatEmbed(combatState) {
             enemyHealthBar = '🟥'.repeat(Math.ceil(enemyHealthPercent / 20));
         }
         
-        embed.addField(
-            `👾 ${enemy.name} ${index + 1}`,
-            `Health: ${enemy.hp} \n${enemyHealthBar}\nAttack: ${enemy.attack}`,
-            true
-        );
+        embed.addFields({
+            name: `👾 ${enemy.name} ${index + 1}`,
+            value: `Health: ${enemy.hp} \n${enemyHealthBar}\nAttack: ${enemy.attack}`,
+            inline: true
+        });
     });
     
     embed.setFooter({ text: 'Choose your action below...' });
