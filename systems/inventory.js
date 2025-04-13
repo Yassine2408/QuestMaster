@@ -117,7 +117,7 @@ async function handleShopCommand(message, playerData, args) {
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
                     .setCustomId('shop_pets')
-                    .setLabel('🐾 Pet Items')
+                    .setLabel('🐾 Pets & Items')
                     .setStyle(ButtonStyle.Primary)
             );
 
@@ -264,13 +264,18 @@ async function handleShopCommand(message, playerData, args) {
 function filterItemsByCategory(category, playerData) {
     return Object.entries(ITEMS).filter(([id, item]) => {
         if (!item.value) return false;
+        
+        // Check class restrictions
         if (item.classRestrictions && !item.classRestrictions.includes(playerData.class)) return false;
+        
+        // Check level requirements
+        if (item.requirements && playerData.level < item.requirements.level) return false;
 
         switch (category) {
             case 'weapons': return item.type === 'weapon';
             case 'armor': return item.type === 'armor';
             case 'consumables': return item.type === 'consumable';
-            case 'pets': return item.type === 'pet';
+            case 'pets': return item.type === 'pet' || id === 'pet_egg' || id === 'rare_pet_egg';
             default: return false;
         }
     });

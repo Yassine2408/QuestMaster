@@ -28,11 +28,11 @@ const ITEMS = {
     // Warrior Weapons
     'wooden_sword': { id: 'wooden_sword', name: 'Wooden Sword', description: 'A basic sword made of wood', value: 50, type: 'weapon', power: 5, requirements: { level: 1 }, classRestrictions: ['warrior'] },
     'battle_axe': { id: 'battle_axe', name: 'Battle Axe', description: 'A heavy axe for warriors', value: 300, type: 'weapon', power: 25, requirements: { level: 10 }, classRestrictions: ['warrior'] },
-    
+
     // Ranger Weapons
     'hunting_bow': { id: 'hunting_bow', name: 'Hunting Bow', description: 'A basic bow for rangers', value: 50, type: 'weapon', power: 6, requirements: { level: 1 }, classRestrictions: ['ranger'] },
     'longbow': { id: 'longbow', name: 'Longbow', description: 'A powerful bow with extended range', value: 300, type: 'weapon', power: 28, requirements: { level: 10 }, classRestrictions: ['ranger'] },
-    
+
     // Mage Weapons
     'apprentice_staff': { id: 'apprentice_staff', name: 'Apprentice Staff', description: 'A basic magical staff', value: 50, type: 'weapon', power: 7, requirements: { level: 1 }, classRestrictions: ['mage'] },
     'crystal_wand': { id: 'crystal_wand', name: 'Crystal Wand', description: 'A wand imbued with magical crystals', value: 300, type: 'weapon', power: 30, requirements: { level: 10 }, classRestrictions: ['mage'] },
@@ -158,5 +158,41 @@ const RECIPES = {
     }
 };
 
+const SHOP_ITEMS = [
+  // Basic weapons
+  'wooden_sword',
+  'stone_sword',
+  'iron_sword',
+  'steel_sword',
+
+  // Class-specific weapons
+  'battle_axe',
+  'hunting_bow',
+  'longbow',
+  'apprentice_staff',
+  'crystal_wand',
+
+  // Armor
+  'leather_armor',
+  'iron_armor',
+  'steel_armor',
+  'hunter_vest',
+  'mage_robes',
+
+  // Consumables
+  'health_potion',
+  'strength_potion',
+  'defense_potion',
+  'super_health_potion',
+
+  // Pet items
+  'pet_egg',
+  'rare_pet_egg',
+  'pet_food',
+  'pet_toy',
+  'pet_treat'
+];
+
 module.exports = ITEMS;
 module.exports.RECIPES = RECIPES;
+module.exports.SHOP_ITEMS = SHOP_ITEMS;
