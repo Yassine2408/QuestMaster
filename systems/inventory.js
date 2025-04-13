@@ -1,5 +1,5 @@
 // Inventory management system for RPG Discord bot
-const { MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, StringSelectMenuBuilder } = require('discord.js');
 
 // Handle inventory command
 async function handleInventoryCommand(message, playerData, args) {
@@ -46,7 +46,7 @@ async function handleInventoryCommand(message, playerData, args) {
         }
         
         // Create inventory embed
-        const inventoryEmbed = new MessageEmbed()
+        const inventoryEmbed = new EmbedBuilder()
             .setTitle(`${message.author.username}'s Inventory`)
             .setColor(CONFIG.embedColor)
             .setDescription(`You have ${Object.keys(inventory).length} unique items, worth approximately ${totalValue} ${CONFIG.currency} in total.`);
