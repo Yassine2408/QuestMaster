@@ -107,28 +107,28 @@ const SHOP_ITEMS = [
 
 // Crafting recipes
 const RECIPES = {
-  'wooden_sword': {
-    materials: { 'wood': 5 },
+  'wooden_sword': { 
+    materials: { 'wood': 5 }, 
     result: 'wooden_sword',
     count: 1
   },
-  'stone_sword': {
-    materials: { 'wood': 3, 'stone': 8 },
+  'stone_sword': { 
+    materials: { 'wood': 3, 'stone': 8 }, 
     result: 'stone_sword',
     count: 1
   },
-  'iron_sword': {
-    materials: { 'wood': 3, 'iron': 10 },
+  'iron_sword': { 
+    materials: { 'wood': 3, 'iron': 10 }, 
     result: 'iron_sword',
     count: 1
   },
-  'leather_armor': {
-    materials: { 'leather': 10 },
+  'leather_armor': { 
+    materials: { 'leather': 10 }, 
     result: 'leather_armor',
     count: 1
   },
-  'health_potion': {
-    materials: { 'herb': 3 },
+  'health_potion': { 
+    materials: { 'herb': 3 }, 
     result: 'health_potion',
     count: 1
   }
@@ -581,22 +581,7 @@ async function adventure(message, args) {
     }
 
     if (levelsGained > 0) {
-      result += `\n🎉 You leveled up to level ${playerData.level}! 🎉`;
-    }
-
-    // Award pet XP if player has one and adventure was successful
-    if (playerData.pet && playerData.petStats) {
-      const petXpGained = getRandomInt(5, 15);
-      playerData.petStats.xp += petXpGained;
-
-      // Level up pet if enough XP (100 XP per level)
-      if (playerData.petStats.xp >= 100 * playerData.petStats.level) {
-        playerData.petStats.xp = 0;
-        playerData.petStats.level += 1;
-        result += `\n\n🐾 Your pet gained ${petXpGained} XP and leveled up to level ${playerData.petStats.level}!`;
-      } else {
-        result += `\n\n🐾 Your pet gained ${petXpGained} XP!`;
-      }
+      result += `\n\n🎉 You leveled up to level ${playerData.level}! 🎉`;
     }
 
     result += `\n\nRemaining Health: ${playerData.stats.currentHealth}/${playerData.stats.maxHealth}`;
@@ -903,7 +888,7 @@ async function craft(message, args) {
 
   // Get the item to craft
   const itemName = args.join(' ').toLowerCase();
-  const recipeEntry = Object.entries(RECIPES).find(([_, recipe]) =>
+  const recipeEntry = Object.entries(RECIPES).find(([_, recipe]) => 
     ITEMS[recipe.result].name.toLowerCase() === itemName
   );
 
@@ -1629,7 +1614,7 @@ async function partyAdventure(message, args) {
       try {
         const member = await client.users.fetch(memberId);
         const memberData = getPlayerData(memberId);
-        result += `${member.username}: ${memberData.stats.currentHealth}/${memberData.stats.maxHealth HP\n`;
+        result += `${member.username}: ${memberData.stats.currentHealth}/${memberData.stats.maxHealth} HP\n`;
       } catch (error) {
         console.error(`Could not fetch user ${memberId}:`, error);
       }
@@ -1696,7 +1681,7 @@ function help(message) {
     .setTitle('RPG Game Commands')
     .setColor(0x00AE86)
     .setDescription('Here are all the available commands for the RPG game:')
-    .addField('⚔️ Basic Commands',
+    .addField('⚔️ Basic Commands', 
       '`!profile` - View your character profile\n' +
       '`!inventory` - View your inventory\n' +
       '`!balance` - Check your gold balance\n' +
@@ -1830,7 +1815,7 @@ client.on('messageCreate', async message => {
         if (adventurePlayer.pet && adventurePlayer.petStats) {
           const petXpGained = getRandomInt(5, 15);
           adventurePlayer.petStats.xp += petXpGained;
-
+          
           // Level up pet if enough XP (100 XP per level)
           if (adventurePlayer.petStats.xp >= 100 * adventurePlayer.petStats.level) {
             adventurePlayer.petStats.xp = 0;
@@ -1880,17 +1865,17 @@ client.on('messageCreate', async message => {
         }
         const creatureName = args[0].toLowerCase();
         const validCreatures = ['wolf', 'bear', 'eagle'];
-
+        
         if (!validCreatures.includes(creatureName)) {
           return message.reply('That creature cannot be tamed! Available creatures: Wolf, Bear, Eagle');
         }
-
+        
         // Get player data for taming
         const tamePlayerData = getPlayerData(message.author.id);
         if (tamePlayerData.pet) {
           return message.reply('You already have a pet! You can only have one pet at a time.');
         }
-
+        
         const tameChance = Math.random();
         if (tameChance > 0.6) {
           tamePlayerData.pet = creatureName;
@@ -1912,11 +1897,11 @@ client.on('messageCreate', async message => {
           if (!playerPetData.pet || !playerPetData.petStats) {
             return message.reply('You don\'t have a pet yet! Use !tame to get one.');
           }
-
+          
           const petType = playerPetData.petStats.type || 'Unknown';
           const petLevel = playerPetData.petStats.level || 1;
           const petXP = playerPetData.petStats.xp || 0;
-
+          
           const petEmbed = new MessageEmbed()
             .setTitle('Your Pet')
             .setColor(0x00AE86)
@@ -1925,7 +1910,7 @@ client.on('messageCreate', async message => {
               { name: 'Level', value: petLevel.toString() },
               { name: 'XP', value: petXP.toString() }
             ]);
-
+          
           return message.reply({ embeds: [petEmbed] });
         }
         break;
@@ -2170,22 +2155,7 @@ async function adventure(message, args) {
     }
 
     if (levelsGained > 0) {
-      result += `\n🎉 You leveled up to level ${playerData.level}! 🎉`;
-    }
-
-    // Award pet XP if player has one and adventure was successful
-    if (playerData.pet && playerData.petStats) {
-      const petXpGained = getRandomInt(5, 15);
-      playerData.petStats.xp += petXpGained;
-
-      // Level up pet if enough XP (100 XP per level)
-      if (playerData.petStats.xp >= 100 * playerData.petStats.level) {
-        playerData.petStats.xp = 0;
-        playerData.petStats.level += 1;
-        result += `\n\n🐾 Your pet gained ${petXpGained} XP and leveled up to level ${playerData.petStats.level}!`;
-      } else {
-        result += `\n\n🐾 Your pet gained ${petXpGained} XP!`;
-      }
+      result += `\n\n🎉 You leveled up to level ${playerData.level}! 🎉`;
     }
 
     result += `\n\nRemaining Health: ${playerData.stats.currentHealth}/${playerData.stats.maxHealth}`;
