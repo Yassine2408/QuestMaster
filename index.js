@@ -838,7 +838,7 @@ async function handleHuntCommand(message, playerData) {
     .addFields({ name: 'Experience', value: `+${xpReward} XP`, inline: true });
   
   if (levelUps > 0) {
-    huntingEmbed.addField('Level Up!', `You are now level ${playerData.level}!`, true);
+    huntingEmbed.addFields({ name: 'Level Up!', value: `You are now level ${playerData.level}!`, inline: true });
   }
   
   // Add cooldown information
@@ -857,7 +857,7 @@ async function handleHuntCommand(message, playerData) {
       const questUpdates = updatedQuests.map(q => 
         `Quest "${q.name}": ${q.current}/${q.target} ${q.itemType} collected`
       );
-      huntingEmbed.addField('Quest Progress', questUpdates.join('\n'));
+      huntingEmbed.addFields({ name: 'Quest Progress', value: questUpdates.join('\n') });
     }
   }
   
@@ -915,14 +915,14 @@ async function handleFishCommand(message, playerData) {
   const levelUps = awardXP(playerData, xpReward);
   
   // Create a fishing embed
-  const fishingEmbed = new MessageEmbed()
+  const fishingEmbed = new EmbedBuilder()
     .setTitle('🎣 Fishing Results')
     .setColor(CONFIG.embedColor)
     .setDescription(`You went fishing and caught:\n${rewards}`)
-    .addField('Experience', `+${xpReward} XP`, true);
+    .addFields({ name: 'Experience', value: `+${xpReward} XP`, inline: true });
   
   if (levelUps > 0) {
-    fishingEmbed.addField('Level Up!', `You are now level ${playerData.level}!`, true);
+    fishingEmbed.addFields({ name: 'Level Up!', value: `You are now level ${playerData.level}!`, inline: true });
   }
   
   // Add cooldown information
@@ -941,7 +941,7 @@ async function handleFishCommand(message, playerData) {
       const questUpdates = updatedQuests.map(q => 
         `Quest "${q.name}": ${q.current}/${q.target} ${q.itemType} collected`
       );
-      fishingEmbed.addField('Quest Progress', questUpdates.join('\n'));
+      fishingEmbed.addFields({ name: 'Quest Progress', value: questUpdates.join('\n') });
     }
   }
   
@@ -956,11 +956,11 @@ async function handleFishCommand(message, playerData) {
 async function handleShopCommand(message, playerData, args) {
   if (!args.length) {
     // Display shop items
-    const shopEmbed = new MessageEmbed()
+    const shopEmbed = new EmbedBuilder()
       .setTitle('🛒 Item Shop')
       .setColor(CONFIG.embedColor)
       .setDescription(`Welcome to the shop! You have ${playerData.gold} ${CONFIG.currency}\n\nUse \`!shop buy <item>\` to purchase an item.\nUse \`!shop sell <item> [quantity]\` to sell items.`)
-      .addField('Available Items', formatShopItems());
+      .addFields({ name: 'Available Items', value: formatShopItems() });
     
     return message.channel.send({ embeds: [shopEmbed] });
   }
