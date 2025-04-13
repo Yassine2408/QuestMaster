@@ -1,5 +1,5 @@
 // Combat system for RPG Discord bot
-const { MessageEmbed, MessageActionRow, MessageButton } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const helpers = require('../utils/helpers');
 
 // Run an adventure (combat encounter)
@@ -14,7 +14,7 @@ async function runAdventure(message, playerData, location) {
     };
     
     // Create adventure embed
-    const adventureEmbed = new MessageEmbed()
+    const adventureEmbed = new EmbedBuilder()
         .setTitle(`🗺️ Adventure: ${location.name}`)
         .setColor(require('../index').CONFIG.embedColor)
         .setDescription(`You venture into ${location.name}...\n\n${location.description}`);
@@ -61,32 +61,40 @@ async function runAdventure(message, playerData, location) {
         // Process combat results
         if (combatResult.fled) {
             // Player fled
-            const fledEmbed = new MessageEmbed()
+            const fledEmbed = new EmbedBuilder()
                 .setTitle('🏃 Escaped!')
-                .setColor('YELLOW')
+                .setColor('#FFFF00') // Yellow
                 .setDescription(`You escaped from ${location.name} with your life, but no rewards.`)
-                .addField('Health Remaining', `${playerData.stats.currentHealth}/${playerData.stats.maxHealth}`, true);
+                .addFields(
+                    { name: 'Health Remaining', value: `${playerData.stats.currentHealth}/${playerData.stats.maxHealth}`, inline: true }
+                );
             
             await adventureMsg.edit({ embeds: [fledEmbed] });
             return { success: false, fled: true };
         } else if (combatResult.defeated) {
             // Player was defeated
-            const defeatEmbed = new MessageEmbed()
+            const defeatEmbed = new EmbedBuilder()
                 .setTitle('❌ Defeated')
-                .setColor('RED')
+                .setColor('#FF0000') // Red
                 .setDescription(`You were defeated in ${location.name}! You'll need to recover before adventuring again.`)
-                .addField('Lost', 'A small amount of gold', true);
+                .addFields(
+                    { name: 'Lost', value: 'A small amount of gold', inline: true }
+                );
             
             // Lose some gold (10-20% of current gold)
             const goldLost = Math.floor(playerData.gold * (0.1 + Math.random() * 0.1));
             if (goldLost > 0) {
                 playerData.gold = Math.max(0, playerData.gold - goldLost);
-                defeatEmbed.addField('Gold Lost', `${goldLost} ${require('../index').CONFIG.currency}`, true);
+                defeatEmbed.addFields(
+                    { name: 'Gold Lost', value: `${goldLost} ${require('../index').CONFIG.currency}`, inline: true }
+                );
             }
             
             // Heal to 25% health
             playerData.stats.currentHealth = Math.floor(playerData.stats.maxHealth * 0.25);
-            defeatEmbed.addField('Health', `Recovered to ${playerData.stats.currentHealth}/${playerData.stats.maxHealth}`, true);
+            defeatEmbed.addFields(
+                { name: 'Health', value: `Recovered to ${playerData.stats.currentHealth}/${playerData.stats.maxHealth}`, inline: true }
+            );
             
             await adventureMsg.edit({ embeds: [defeatEmbed] });
             
@@ -169,29 +177,32 @@ async function runAdventure(message, playerData, location) {
     }
     
     // Create rewards embed
-    const rewardsEmbed = new MessageEmbed()
+    const rewardsEmbed = new EmbedBuilder()
         .setTitle(`🎉 Adventure Complete: ${location.name}`)
-        .setColor('GREEN');
+        .setColor('#00FF00'); // Green
     
     if (results.defeatedEnemies.length > 0) {
         rewardsEmbed.setDescription(`You successfully explored ${location.name} and defeated ${results.defeatedEnemies.length} enemies!`);
-        rewardsEmbed.addField('Enemies Defeated', results.defeatedEnemies.join(', '), false);
+        rewardsEmbed.addFields({ name: 'Enemies Defeated', value: results.defeatedEnemies.join(', '), inline: false });
     } else {
         rewardsEmbed.setDescription(`You successfully explored ${location.name} without encountering any enemies.`);
     }
     
     // Add rewards to embed
-    rewardsEmbed.addField('Gold', `${results.gold} ${require('../index').CONFIG.currency}${petBonusText}`, true);
-    rewardsEmbed.addField('Experience', `${results.experience} XP${levelUps > 0 ? ` (Leveled up to ${playerData.level}!)` : ''}`, true);
+    rewardsEmbed.addFields(
+        { name: 'Gold', value: `${results.gold} ${require('../index').CONFIG.currency}${petBonusText}`, inline: true },
+        { name: 'Experience', value: `${results.experience} XP${levelUps > 0 ? ` (Leveled up to ${playerData.level}!)` : ''}`, inline: true }
+    );
     
     if (itemRewards.length > 0) {
-        rewardsEmbed.addField('Items Found', 
-            itemRewards.map(item => `${item.quantity}x ${item.name}`).join('\n'), 
-            false
-        );
+        rewardsEmbed.addFields({
+            name: 'Items Found', 
+            value: itemRewards.map(item => `${item.quantity}x ${item.name}`).join('\n'), 
+            inline: false
+        });
     }
     
-    rewardsEmbed.addField('Health', `${playerData.stats.currentHealth}/${playerData.stats.maxHealth}`, true);
+    rewardsEmbed.addFields({ name: 'Health', value: `${playerData.stats.currentHealth}/${playerData.stats.maxHealth}`, inline: true });
     
     // Show cooldown
     const cooldownTime = Math.floor(require('../index').CONFIG.adventureCooldown / 1000 / 60);
