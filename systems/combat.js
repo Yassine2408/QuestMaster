@@ -343,7 +343,18 @@ async function runCombat(message, playerData, enemies, adventureMsg) {
                         await message.channel.send(`You defeated ${targetEnemy.name}!`);
                         combatState.defeatedEnemies.push(targetEnemy);
                         combatState.enemies = combatState.enemies.filter(e => e.id !== targetEnemy.id);
+                        
+                        // Show victory message
+                        const victoryEmbed = new EmbedBuilder()
+                            .setTitle('🎉 Victory!')
+                            .setColor('#00FF00')
+                            .setDescription(`You have emerged victorious!\nHealth remaining: ${combatState.playerHealth}/${combatState.playerMaxHealth}`);
+                        await message.channel.send({ embeds: [victoryEmbed] });
+                        return;
                     }
+                    
+                    // Enemy attacks back
+                    await handleEnemyAttacks(message, combatState, adventureMsg);
                 } else {
                     await handlePlayerAttack(message, combatState, adventureMsg);
                 }
@@ -597,7 +608,13 @@ async function handleEnemyAttacks(message, combatState, adventureMsg) {
         if (combatState.playerHealth <= 0) {
             combatState.playerHealth = 0;
             combatState.defeated = true;
-            await message.channel.send('You have been defeated!');
+            
+            // Show defeat message
+            const defeatEmbed = new EmbedBuilder()
+                .setTitle('💀 Defeat')
+                .setColor('#FF0000')
+                .setDescription(`You have been defeated by ${enemy.name}!`);
+            await message.channel.send({ embeds: [defeatEmbed] });
             break;
         }
     }
