@@ -515,7 +515,7 @@ async function handleNotificationsCommand(message, playerData) {
 
     if (i.customId === 'delete_all_notifs') {
       playerData.notifications = [];
-      await i.update({
+      await i.message.edit({
         content: 'All notifications deleted!',
         embeds: [],
         components: []
@@ -564,7 +564,7 @@ async function handleNotificationsCommand(message, playerData) {
           }
           updatedRows.push(deleteAllRow);
 
-          await i.update({
+          await i.message.edit({
             embeds: [notificationsEmbed],
             components: updatedRows
           });
