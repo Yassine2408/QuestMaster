@@ -513,11 +513,9 @@ async function handleNotificationsCommand(message, playerData) {
       return i.reply({ content: 'These buttons are not for you!', ephemeral: true });
     }
 
-    await i.deferUpdate();
-
     if (i.customId === 'delete_all_notifs') {
       playerData.notifications = [];
-      await i.editReply({
+      await i.update({
         content: 'All notifications deleted!',
         embeds: [],
         components: []
