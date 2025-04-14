@@ -1,12 +1,20 @@
+<<<<<<< HEAD
 // Enhanced backup script for RPG data
+=======
+// Backup script for RPG data
+>>>>>>> 4533471f96616676b5aa5f5449e6a9c3b372163c
 const fs = require('fs');
 const path = require('path');
 
 // Configuration
 const DATA_FILE = 'rpg_data.json';
 const BACKUP_DIR = './backups';
+<<<<<<< HEAD
 const MAX_BACKUPS = 15; // Increased maximum number of backup files to keep
 const LOG_FILE = path.join(BACKUP_DIR, 'backup.log');
+=======
+const MAX_BACKUPS = 10; // Maximum number of backup files to keep
+>>>>>>> 4533471f96616676b5aa5f5449e6a9c3b372163c
 
 // Create backups directory if it doesn't exist
 if (!fs.existsSync(BACKUP_DIR)) {
@@ -14,6 +22,7 @@ if (!fs.existsSync(BACKUP_DIR)) {
   console.log(`Created backup directory: ${BACKUP_DIR}`);
 }
 
+<<<<<<< HEAD
 // Log function for backup events
 function logBackupEvent(message) {
   const timestamp = new Date().toISOString();
@@ -28,12 +37,19 @@ function logBackupEvent(message) {
   console.log(message);
 }
 
+=======
+>>>>>>> 4533471f96616676b5aa5f5449e6a9c3b372163c
 function createBackup() {
   try {
     // Check if data file exists
     if (!fs.existsSync(DATA_FILE)) {
+<<<<<<< HEAD
       logBackupEvent(`Data file ${DATA_FILE} does not exist yet. Nothing to backup.`);
       return false;
+=======
+      console.log(`Data file ${DATA_FILE} does not exist yet. Nothing to backup.`);
+      return;
+>>>>>>> 4533471f96616676b5aa5f5449e6a9c3b372163c
     }
 
     // Create timestamp for backup filename
@@ -45,6 +61,7 @@ function createBackup() {
     const backupFileName = `backup_${timestamp}.json`;
     const backupPath = path.join(BACKUP_DIR, backupFileName);
     
+<<<<<<< HEAD
     // Read the source file
     const data = fs.readFileSync(DATA_FILE, 'utf8');
     
@@ -73,6 +90,16 @@ function createBackup() {
   } catch (error) {
     logBackupEvent(`ERROR creating backup: ${error.message}`);
     return false;
+=======
+    // Copy the data file to the backup location
+    fs.copyFileSync(DATA_FILE, backupPath);
+    console.log(`Created backup: ${backupFileName}`);
+    
+    // Clean up old backups if we have too many
+    cleanupOldBackups();
+  } catch (error) {
+    console.error('Error creating backup:', error);
+>>>>>>> 4533471f96616676b5aa5f5449e6a9c3b372163c
   }
 }
 
@@ -93,6 +120,7 @@ function cleanupOldBackups() {
       const filesToRemove = backupFiles.slice(MAX_BACKUPS);
       filesToRemove.forEach(file => {
         fs.unlinkSync(file.path);
+<<<<<<< HEAD
         logBackupEvent(`Removed old backup: ${file.name}`);
       });
     }
@@ -155,3 +183,20 @@ module.exports = {
   restoreBackup,
   listBackups
 };
+=======
+        console.log(`Removed old backup: ${file.name}`);
+      });
+    }
+  } catch (error) {
+    console.error('Error cleaning up old backups:', error);
+  }
+}
+
+// Create a backup immediately when script is run
+createBackup();
+
+// Export the backup function so it can be used in other files
+module.exports = { createBackup };
+
+console.log('Backup complete!');
+>>>>>>> 4533471f96616676b5aa5f5449e6a9c3b372163c
