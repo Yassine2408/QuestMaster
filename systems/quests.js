@@ -513,16 +513,18 @@ async function handleNotificationsCommand(message, playerData) {
       return i.reply({ content: 'These buttons are not for you!', ephemeral: true });
     }
 
+    await i.deferUpdate();
+
     if (i.customId === 'delete_all_notifs') {
       playerData.notifications = [];
-      await i.update({
+      await i.editReply({
         content: 'All notifications deleted!',
         embeds: [],
         components: []
       });
     } else {
       const index = parseInt(i.customId.split('_')[2]);
-      const notifIndex = playerData.notifications.length - 10 + index;
+      const notifIndex = playerData.notifications.length - (recentNotifications.length - index);
       if (notifIndex >= 0 && notifIndex < playerData.notifications.length) {
         playerData.notifications.splice(notifIndex, 1);
 
