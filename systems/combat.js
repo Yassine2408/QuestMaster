@@ -327,7 +327,7 @@ async function runCombat(message, playerData, enemies, adventureMsg) {
         const filter = i => i.customId.startsWith('combat_') && i.user.id === message.author.id;
 
         try {
-            const collected = await adventureMsg.awaitMessageComponent({ filter, time: 60000 });
+            const collected = await adventureMsg.awaitMessageComponent({ filter, time: 30000 });
             await collected.deferUpdate();
 
             // Process player action
@@ -449,6 +449,7 @@ async function handlePlayerAttack(message, combatState, adventureMsg) {
 
     // Select target
     let targetEnemy;
+    let targetMsg;
 
     if (combatState.enemies.length === 1) {
         // Only one enemy, target it
@@ -466,35 +467,44 @@ async function handlePlayerAttack(message, combatState, adventureMsg) {
             );
         }
 
-        const targetMsg = await message.channel.send({
+        targetMsg = await message.channel.send({
             content: 'Choose your target:',
             components: [targetButtons]
         });
 
-        // Wait for target selection
-        const filter = i => i.customId.startsWith('target_') && i.user.id === message.author.id;
+        // Wait for player action
+        const filter = i => (i.customId.startsWith('combat_') || i.customId.startsWith('target_')) && i.user.id === message.author.id;
 
         try {
-            const collected = await targetMsg.awaitMessageComponent({ filter, time: 15000 });
+            const collected = await message.channel.awaitMessageComponent({ filter, time: 30000 });
             await collected.deferUpdate();
 
-            const targetIndex = parseInt(collected.customId.split('_')[1]);
-            targetEnemy = combatState.enemies[targetIndex];
+            if (collected.customId.startsWith('target_')) {
+                const targetIndex = parseInt(collected.customId.split('_')[1]);
+                targetEnemy = combatState.enemies[targetIndex];
+            } else {
+                // For single enemy, use the first one
+                targetEnemy = combatState.enemies[0];
+            }
 
-            // Clean up target message
-            await targetMsg.delete().catch(() => {});
+            // Clean up target message if it exists
+            if (targetMsg) {
+                await targetMsg.delete().catch(() => {});
+            }
         } catch (error) {
             // Timeout - select random target
             const randomIndex = helpers.getRandomInt(0, combatState.enemies.length - 1);
             targetEnemy = combatState.enemies[randomIndex];
 
-            await targetMsg.edit({
-                content: `You hesitated! Attacking ${targetEnemy.name} randomly.`,
-                components: []
-            });
+            if (targetMsg) {
+                await targetMsg.edit({
+                    content: `You hesitated! Attacking ${targetEnemy.name} randomly.`,
+                    components: []
+                });
 
-            // Delete the message after a delay
-            setTimeout(() => targetMsg.delete().catch(() => {}), 2000);
+                // Delete the message after a delay
+                setTimeout(() => targetMsg.delete().catch(() => {}), 2000);
+            }
         }
     }
 
