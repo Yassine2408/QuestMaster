@@ -349,9 +349,11 @@ async function runCombat(message, playerData, enemies, adventureMsg) {
                 }
             }
         } catch (error) {
-            // Timeout - enemies attack by default
+            // Timeout - enemies attack once
             await message.channel.send('You hesitated! The enemies attack!');
-            await handleEnemyAttacks(message, combatState, adventureMsg);
+            const enemyDamage = Math.floor(Math.random() * 4) + 4; // Random damage between 4-8
+            combatState.playerHealth -= enemyDamage;
+            await message.channel.send(`Enemies deal ${enemyDamage} damage!`);
         }
 
         // Check if combat is over
