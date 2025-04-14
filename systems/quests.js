@@ -458,9 +458,8 @@ async function handleNotificationsCommand(message, playerData) {
   const notificationsEmbed = new MessageEmbed()
     .setTitle('📬 Your Notifications')
     .setColor(CONFIG.embedColor)
-    .setDescription('Your recent notifications:\n(Click the buttons below to delete notifications)');
+    .setDescription('Click the buttons below to delete notifications:');
 
-  // Add last 10 notifications, newest first
   const recentNotifications = playerData.notifications.slice(-10).reverse();
   const fields = recentNotifications.map((notification, index) => {
     const timeAgo = helpers.formatTimeAgo(notification.timestamp);
@@ -472,7 +471,7 @@ async function handleNotificationsCommand(message, playerData) {
 
   notificationsEmbed.addFields(fields);
 
-  // Create delete buttons for each notification
+  // Create delete buttons
   const rows = [];
   for (let i = 0; i < recentNotifications.length; i += 5) {
     const row = new MessageActionRow();
@@ -486,11 +485,10 @@ async function handleNotificationsCommand(message, playerData) {
           .setStyle('DANGER')
       );
     });
-
     rows.push(row);
   }
 
-  // Add a "Delete All" button
+  // Add Delete All button
   const deleteAllRow = new MessageActionRow()
     .addComponents(
       new MessageButton()
@@ -500,13 +498,13 @@ async function handleNotificationsCommand(message, playerData) {
     );
   rows.push(deleteAllRow);
 
-  const msg = await message.channel.send({ 
+  const msg = await message.channel.send({
     embeds: [notificationsEmbed],
     components: rows
   });
 
   // Create collector for button interactions
-  const collector = msg.createMessageComponentCollector({ 
+  const collector = msg.createMessageComponentCollector({
     time: 60000 // 1 minute timeout
   });
 
@@ -517,7 +515,7 @@ async function handleNotificationsCommand(message, playerData) {
 
     if (i.customId === 'delete_all_notifs') {
       playerData.notifications = [];
-      await i.update({ 
+      await i.update({
         content: 'All notifications deleted!',
         embeds: [],
         components: []
@@ -530,7 +528,7 @@ async function handleNotificationsCommand(message, playerData) {
 
         // If no notifications left
         if (playerData.notifications.length === 0) {
-          await i.update({ 
+          await i.update({
             content: 'All notifications deleted!',
             embeds: [],
             components: []
@@ -562,12 +560,11 @@ async function handleNotificationsCommand(message, playerData) {
                   .setStyle('DANGER')
               );
             });
-
             updatedRows.push(row);
           }
           updatedRows.push(deleteAllRow);
 
-          await i.update({ 
+          await i.update({
             embeds: [notificationsEmbed],
             components: updatedRows
           });
