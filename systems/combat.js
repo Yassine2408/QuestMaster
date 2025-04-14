@@ -332,7 +332,21 @@ async function runCombat(message, playerData, enemies, adventureMsg) {
 
             // Process player action
             if (collected.customId === 'combat_attack') {
-                await handlePlayerAttack(message, combatState, adventureMsg);
+                // Select first enemy if only one exists
+                if (combatState.enemies.length === 1) {
+                    const targetEnemy = combatState.enemies[0];
+                    const damage = Math.max(1, Math.floor(combatState.playerStrength * (0.8 + Math.random() * 0.4)));
+                    targetEnemy.hp -= damage;
+                    await message.channel.send(`You attack ${targetEnemy.name} for ${damage} damage!`);
+                    
+                    if (targetEnemy.hp <= 0) {
+                        await message.channel.send(`You defeated ${targetEnemy.name}!`);
+                        combatState.defeatedEnemies.push(targetEnemy);
+                        combatState.enemies = combatState.enemies.filter(e => e.id !== targetEnemy.id);
+                    }
+                } else {
+                    await handlePlayerAttack(message, combatState, adventureMsg);
+                }
             } else if (collected.customId === 'combat_heal') {
                 await handlePlayerHeal(message, playerData, combatState, adventureMsg);
             } else if (collected.customId === 'combat_flee') {
